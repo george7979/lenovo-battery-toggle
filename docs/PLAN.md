@@ -11,3 +11,9 @@
 
 - **v0.1.0** — first GitHub release ([CHANGELOG](../CHANGELOG.md)).
 - **v0.1.1** — security fixes and the finish page.
+
+## Backlog
+
+- **Current state in the settings window** — one line ("Charge thresholds are on/off now")
+  read when the window opens, as a lightweight alternative to a tray icon (see TECH →
+  *Deliberately: no tray icon*).
