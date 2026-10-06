@@ -86,8 +86,8 @@ en.SwitchOnNow=Switch charge thresholds on now (start below %1%%, stop at %2%%)
 pl.SwitchOnNow=Włącz teraz progi ładowania (start poniżej %1 %%, stop przy %2 %%)
 en.ApplyNow=Apply these charge thresholds now (start below %1%%, stop at %2%%)
 pl.ApplyNow=Zastosuj teraz te progi ładowania (start poniżej %1 %%, stop przy %2 %%)
-en.FinishedHint=To toggle thresholds with one key, open Lenovo Vantage, find the user-defined key (F12 on many ThinkPads) and set it to open:%n%n{app}\{#AppExe}
-pl.FinishedHint=Aby przełączać progi jednym klawiszem, otwórz Lenovo Vantage, znajdź klawisz definiowany przez użytkownika (F12 w wielu ThinkPadach) i ustaw w nim otwieranie pliku:%n%n{app}\{#AppExe}
+en.FinishedHint=To switch the charge thresholds on or off later, start Lenovo Battery Toggle from the Start menu. Each start toggles them.
+pl.FinishedHint=Aby później włączyć lub wyłączyć progi ładowania, uruchom Lenovo Battery Toggle z menu Start. Każde uruchomienie je przełącza.
 
 [Files]
 Source: "{#SourceDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion

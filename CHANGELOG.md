@@ -12,6 +12,12 @@ All notable changes to this project are documented here. The format follows
   switch them on with the values just chosen (checked by default), so the state is clear
   when setup closes. Silent installs leave the thresholds as they are.
 
+### Changed
+
+- The installer's closing hint now just says to start the app from the Start menu, instead
+  of describing the key setup in Lenovo Vantage (which differs between Vantage versions;
+  the README still explains it).
+
 ### Security
 
 - The app no longer starts `ChargeThreshold.exe` from the user's profile with

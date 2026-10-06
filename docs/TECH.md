@@ -151,7 +151,7 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
    `SetChargeThreshold start=[0], stop=[0]`.
 4. Interactive install: mode dialog on a fresh install, threshold page validation, finish
    page with the current state, the *Switch on now* checkbox (or *Apply now* when already
-   on) and the F12 hint; with the app installed: Repair keeps the values, Uninstall removes every
+   on) and the hint to start the app from the Start menu; with the app installed: Repair keeps the values, Uninstall removes every
    installation and closes.
 
 Steps 1–3 are scripted and pass; `--prepare <start> <stop>` was checked to write valid
