@@ -32,7 +32,8 @@ namespace LenovoBatteryToggle
 
             if (mode == "--settings")
             {
-                Application.Run(new SettingsForm(Settings.LoadOrDefault()));
+                // Modal, so the Cancel button and Esc close it through DialogResult
+                using (var form = new SettingsForm(Settings.LoadOrDefault())) form.ShowDialog();
                 return Ok;
             }
 
