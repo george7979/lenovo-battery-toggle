@@ -197,9 +197,10 @@ With an all-users installation:
 - settings are per user: the uninstaller removes the data folder of the user who runs it,
 - the uninstaller runs with administrator rights and therefore does **not** switch the
   thresholds off (it would have to start the Lenovo tool from a folder that is writable
-  without those rights). To have them switched off, uninstall by running the installer and
-  choosing **Uninstall**, which switches them off as you before removing the app, or press
-  the toggle until they are off before uninstalling from Windows Settings.
+  without those rights). To have them switched off, run the installer and choose
+  **Uninstall**: it switches them off under your own account, without administrator
+  rights, before removing the app. Or toggle them off before uninstalling from Windows
+  Settings.
 
 ## Troubleshooting
 

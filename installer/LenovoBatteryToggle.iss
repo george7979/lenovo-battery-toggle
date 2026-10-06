@@ -262,12 +262,11 @@ begin
     { Removes every installation found, so nothing is left even if both exist }
     Result := False;
     Removed := True;
+    { First, while the Lenovo tool is still there: an elevated setup starts the per-user
+      uninstaller elevated too, so its own --off does nothing, and it deletes the tool }
+    if InstalledForAll then TurnOffAsOriginalUser(HKLM);
     if InstalledForMe then Removed := UninstallFrom(HKCU) and Removed;
-    if InstalledForAll then
-    begin
-      TurnOffAsOriginalUser(HKLM);
-      Removed := UninstallFrom(HKLM) and Removed;
-    end;
+    if InstalledForAll then Removed := UninstallFrom(HKLM) and Removed;
     if Removed then
       MsgBox(CustomMessage('Uninstalled'), mbInformation, MB_OK)
     else
