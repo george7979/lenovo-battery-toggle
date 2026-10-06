@@ -1,0 +1,3 @@
+# Plik Lenovo pobiera install.ps1; nie trzymamy cudzych binariów w repo
+*.exe
+.work/
