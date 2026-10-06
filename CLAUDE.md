@@ -37,8 +37,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\Users\LENOVO\A
   the test, and say which state that is.
 - `ChargeThreshold.exe` must never be committed or attached to releases (`*.exe` is ignored).
 
-## Release
+## Branches and release
 
-A push to `main` that changes code or the installer builds a CI artifact. A release is a
-tag `v<version>` on `main`; propose the tag only after the owner tested the build on the
-ThinkPad. `build.ps1 -Version` sets the version of both the app and the installer.
+- Work on `dev`; `main` holds released states only. Pushes to either branch that change code
+  or the installer build a CI artifact.
+- Release, after the owner tested the build on the ThinkPad:
+  1. on `dev`: add the `## [x.y.z] - date` section to `CHANGELOG.md`, set `<Version>` in the
+     `.csproj`, update the status in `docs/PLAN.md`; push `dev` and wait for a green build,
+  2. `git switch main && git merge --no-ff dev -m "Release vx.y.z"`,
+  3. `git tag -a vx.y.z -m "Lenovo Battery Toggle x.y.z"` on that merge commit,
+  4. push `main` and the tag; CI publishes the release with the changelog section as notes,
+  5. `git switch dev` and continue there.
+- `build.ps1 -Version` sets the version of both the app and the installer.
