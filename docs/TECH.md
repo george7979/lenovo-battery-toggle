@@ -43,7 +43,8 @@ where the Vantage switch reads it from.
 | Command | Used by | Behaviour |
 |---|---|---|
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
-| `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
+| `--on` | installer finish page | As above, but always `on <stop> <start>` (applies the saved values when already on) |
+| `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool, read the state. No UI, no change. Exit `0` ready with thresholds off, `4` ready with thresholds on, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
 | `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
 | `--install-tool` | all-users setup (elevated) | Download `ChargeThreshold.exe` next to the app (`{app}`), verify it there. Exit `0` OK (also when a valid copy is already there), `1` failed, `3` not obtained |
 | `--off` | uninstaller, setup's Uninstall action | Switch thresholds off if a tool copy and the driver exist. Never downloads, always exits `0` |
@@ -149,7 +150,8 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
 3. With thresholds on, uninstall silently → nothing left, last log entry
    `SetChargeThreshold start=[0], stop=[0]`.
 4. Interactive install: mode dialog on a fresh install, threshold page validation, finish
-   page hint; with the app installed: Repair keeps the values, Uninstall removes every
+   page with the current state, the *Switch on now* checkbox (or *Apply now* when already
+   on) and the F12 hint; with the app installed: Repair keeps the values, Uninstall removes every
    installation and closes.
 
 Steps 1–3 are scripted and pass; `--prepare <start> <stop>` was checked to write valid

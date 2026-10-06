@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The installer's last page says whether the charge thresholds are on or off and offers to
+  switch them on with the values just chosen (checked by default), so the state is clear
+  when setup closes. Silent installs leave the thresholds as they are.
+
 ### Security
 
 - The app no longer starts `ChargeThreshold.exe` from the user's profile with

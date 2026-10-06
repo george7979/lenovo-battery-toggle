@@ -11,11 +11,15 @@ namespace LenovoBatteryToggle
         private const int Failed = 1;
         private const int DriverMissing = 2;
         private const int ToolUnavailable = 3;
+        private const int ReadyThresholdsOn = 4;
 
         /// <summary>
         /// No arguments: toggle thresholds and show the result.
+        /// --on: switch thresholds on with the saved values and show the result (used by the
+        ///   installer's finish page).
         /// --prepare [start stop]: check the driver, write the given (or default) settings,
-        ///   download the Lenovo tool; no UI, no toggle. Exit 0 OK, 1 failed, 2 driver missing,
+        ///   download the Lenovo tool, read the state; no UI, no change. Exit 0 ready with
+        ///   thresholds off, 4 ready with thresholds on, 1 failed, 2 driver missing,
         ///   3 ChargeThreshold.exe not obtained.
         /// --install-tool: download ChargeThreshold.exe next to the app (used by an elevated
         ///   all-users setup). Exit 0 OK, 1 failed, 3 not obtained.
@@ -46,7 +50,7 @@ namespace LenovoBatteryToggle
                 if (!isFirst) return Ok;
                 try
                 {
-                    var message = Toggle(out var seconds);
+                    var message = Switch(mode == "--on", out var seconds);
                     Notification.Show(message, isError: false, seconds);
                     return Ok;
                 }
@@ -65,7 +69,8 @@ namespace LenovoBatteryToggle
             }
         }
 
-        private static string Toggle(out int seconds)
+        /// <summary>Toggles, or with onlyOn switches on (applying the saved values when already on).</summary>
+        private static string Switch(bool onlyOn, out int seconds)
         {
             if (!PowerDriver.IsInstalled()) throw new InvalidOperationException(Text.DriverMissing);
             var settings = Settings.Load();
@@ -73,7 +78,7 @@ namespace LenovoBatteryToggle
             var tool = ChargeThresholdTool.Ensure();
 
             var before = tool.Status();
-            if (before.IsOff) tool.TurnOn(settings.Stop, settings.Start);
+            if (before.IsOff || onlyOn) tool.TurnOn(settings.Stop, settings.Start);
             else tool.TurnOff();
 
             // The message reflects the state read back after the change, not the intent
@@ -99,8 +104,8 @@ namespace LenovoBatteryToggle
             try
             {
                 Settings.Load();
-                ChargeThresholdTool.Ensure();
-                return Ok;
+                // The state lets the finish page say whether thresholds are on now
+                return ChargeThresholdTool.Ensure().Status().IsOff ? Ok : ReadyThresholdsOn;
             }
             catch (ToolUnavailableException)
             {

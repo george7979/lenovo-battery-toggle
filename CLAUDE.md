@@ -36,7 +36,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-bui
   command line that contains the searched text also matches the query itself; exclude `$PID`
   or wait on the process object returned by `Start-Process -PassThru`.
 - **No braces inside `{ ... }` comments in the `.iss` `[Code]` section**: `{app}` in such a
-  comment ends it early (*Identifier expected*). Write "the program folder" instead.
+  comment ends it early (*Identifier expected*). Write "the program folder" instead. Nor may
+  a `[Code]` line start with `[` (an array continued on a new line): it is read as a section
+  tag (*Invalid section tag*).
 - **WQL with quotes inside bash `'...'`** breaks (`''` becomes empty). Put such PowerShell
   in a file under `.work/` and run it with `-File`.
 - **Testing toggles the real battery.** Leave thresholds in the state the owner had before

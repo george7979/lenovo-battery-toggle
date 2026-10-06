@@ -127,6 +127,11 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
 4. On the **Charge thresholds** page choose the values used when the thresholds are on.
 5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
    key press works even offline.
+6. The last page says whether the thresholds are on or off right now and offers
+   **Switch charge thresholds on now** (checked). Leave it checked and the thresholds are
+   switched on with your values when you click Finish, confirmed by the usual
+   notification; uncheck it and they stay as they are. (On a repair with the thresholds
+   already on, the option applies the values from the threshold page.)
 
 Running the installer when the app is already installed shows where it is installed and
 offers two choices:
