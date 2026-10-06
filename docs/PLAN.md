@@ -4,7 +4,7 @@
 
 | Stage | Scope | Status |
 |---|---|---|
-| 0.1 | App (toggle, notification, settings, driver check, icon), Inno Setup installer (install mode choice, threshold page, Repair / Reinstall / Remove, full uninstall), CI with releases | built and tested locally; waiting for the owner's test (interactive installer, F12 in Vantage) and the first release |
+| 0.1 | App (toggle, notification, settings, driver check, icon), Inno Setup installer (install mode choice, threshold page, Repair / Uninstall, full uninstall), CI with releases | built and tested locally; waiting for the owner's test (interactive installer, F12 in Vantage) and the first release |
 
 ## Milestones
 

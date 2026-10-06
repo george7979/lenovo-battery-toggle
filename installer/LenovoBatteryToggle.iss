@@ -64,16 +64,18 @@ en.MaintenanceCaption=Lenovo Battery Toggle is already installed
 pl.MaintenanceCaption=Lenovo Battery Toggle jest już zainstalowany
 en.MaintenanceDescription=Choose what you want to do.
 pl.MaintenanceDescription=Wybierz, co chcesz zrobić.
-en.MaintenancePrompt=Repair keeps your threshold settings and also updates the program to this version. Reinstall and Remove switch the charge thresholds off and delete the settings.
-pl.MaintenancePrompt=Naprawa zachowuje ustawienia progów i aktualizuje program do tej wersji. Ponowna instalacja i usunięcie wyłączają progi ładowania i kasują ustawienia.
-en.ActionRepair=Repair: restore the program files and shortcuts
-pl.ActionRepair=Napraw: przywróć pliki programu i skróty
-en.ActionReinstall=Reinstall: remove the program, then install it from scratch
-pl.ActionReinstall=Zainstaluj ponownie: usuń program i zainstaluj go od nowa
-en.ActionRemove=Remove: uninstall the program and delete all its files
-pl.ActionRemove=Usuń: odinstaluj program i skasuj wszystkie jego pliki
-en.UninstallTimeout=The previous installation could not be removed. Remove it from Windows Settings, Apps, and run setup again.
-pl.UninstallTimeout=Nie udało się usunąć poprzedniej instalacji. Usuń ją w Ustawieniach Windows (Aplikacje) i uruchom instalator ponownie.
+en.InstalledForMe=Installed for you:
+pl.InstalledForMe=Zainstalowany tylko dla Ciebie:
+en.InstalledForAll=Installed for all users:
+pl.InstalledForAll=Zainstalowany dla wszystkich użytkowników:
+en.ActionRepair=Repair: restore the program files and shortcuts, keep the settings (also updates to this version)
+pl.ActionRepair=Napraw: przywróć pliki programu i skróty, zachowaj ustawienia (także aktualizacja do tej wersji)
+en.ActionUninstall=Uninstall: switch the charge thresholds off and delete the program and all its files
+pl.ActionUninstall=Odinstaluj: wyłącz progi ładowania i usuń program oraz wszystkie jego pliki
+en.Uninstalled=Lenovo Battery Toggle has been uninstalled.
+pl.Uninstalled=Lenovo Battery Toggle został odinstalowany.
+en.UninstallFailed=The program could not be uninstalled completely. Remove it from Windows Settings, Apps.
+pl.UninstallFailed=Nie udało się całkowicie odinstalować programu. Usuń go w Ustawieniach Windows (Aplikacje).
 en.FinishedHint=To toggle thresholds with one key, open Lenovo Vantage, find the user-defined key (F12 on many ThinkPads) and set it to open:%n%n{app}\{#AppExe}
 pl.FinishedHint=Aby przełączać progi jednym klawiszem, otwórz Lenovo Vantage, znajdź klawisz definiowany przez użytkownika (F12 w wielu ThinkPadach) i ustaw w nim otwieranie pliku:%n%n{app}\{#AppExe}
 
@@ -97,16 +99,16 @@ Type: filesandordirs; Name: "{#DataDir}"
 
 [Code]
 const
-  { Inno appends _is1 to AppId; HKA is HKCU for a per-user install and HKLM for all users }
+  { Inno appends _is1 to AppId. A per-user install registers under HKCU, an all-users install
+    under HKLM; both can exist at the same time. }
   UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6C1E8F4A-2B7D-4E59-9A3C-5D0F1B8E7A24}_is1';
   ActionRepair = 0;
-  ActionReinstall = 1;
-  ActionRemove = 2;
+  ActionUninstall = 1;
 
 var
   ThresholdPage: TInputQueryWizardPage;
   MaintenancePage: TInputOptionWizardPage;
-  IsInstalled: Boolean;
+  InstalledForMe, InstalledForAll: Boolean;
   Leaving: Boolean;
 
 { CustomMessage leaves %n as text; turn it into a line break }
@@ -116,14 +118,9 @@ begin
   StringChangeEx(Result, '%n', #13#10, True);
 end;
 
-{ The uninstaller of the existing installation, or '' when there is none }
-function ExistingUninstaller: String;
-var
-  Value: String;
+function RegValue(Root: Integer; const Name: String): String;
 begin
-  Result := '';
-  if RegQueryStringValue(HKA, UninstallKey, 'UninstallString', Value) then
-    Result := RemoveQuotes(Value);
+  if not RegQueryStringValue(Root, UninstallKey, Name, Result) then Result := '';
 end;
 
 { Closes the wizard without the "Exit Setup?" question }
@@ -138,21 +135,22 @@ begin
   if Leaving then Confirm := False;
 end;
 
-{ Runs the existing uninstaller silently and waits until it is gone. The uninstaller copies
-  itself to a temporary file and returns at once, so waiting for the process is not enough:
-  wait for its Apps entry to disappear. }
-function UninstallSilently: Boolean;
+{ Runs one installation's uninstaller silently and waits until it is gone. ShellExec lets an
+  all-users uninstaller ask for elevation. The uninstaller copies itself to a temporary file
+  and returns at once, so wait for its Apps entry to disappear, not for the process. }
+function UninstallFrom(Root: Integer): Boolean;
 var
   ResultCode, Waited: Integer;
 begin
-  Exec(ExistingUninstaller, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  ShellExec('', RemoveQuotes(RegValue(Root, 'UninstallString')),
+    '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Waited := 0;
-  while RegKeyExists(HKA, UninstallKey) and (Waited < 60000) do
+  while RegKeyExists(Root, UninstallKey) and (Waited < 60000) do
   begin
     Sleep(250);
     Waited := Waited + 250;
   end;
-  Result := not RegKeyExists(HKA, UninstallKey);
+  Result := not RegKeyExists(Root, UninstallKey);
 end;
 
 function ConfigPath: String;
@@ -185,6 +183,7 @@ procedure InitializeWizard;
 var
   Json: AnsiString;
   Start, Stop: Integer;
+  Where: String;
 begin
   Start := 75;
   Stop := 80;
@@ -195,13 +194,20 @@ begin
     Stop := ReadConfigValue(Json, 'stop', Stop);
   end;
 
-  IsInstalled := ExistingUninstaller <> '';
+  { Inno reuses the mode of an existing installation and skips the mode dialog, so Repair
+    always works on the installation that is there }
+  InstalledForMe := RegKeyExists(HKCU, UninstallKey);
+  InstalledForAll := RegKeyExists(HKLM, UninstallKey);
+  Where := '';
+  if InstalledForMe then
+    Where := Where + CustomMessage('InstalledForMe') + #13#10 + RegValue(HKCU, 'InstallLocation') + #13#10#13#10;
+  if InstalledForAll then
+    Where := Where + CustomMessage('InstalledForAll') + #13#10 + RegValue(HKLM, 'InstallLocation') + #13#10#13#10;
   MaintenancePage := CreateInputOptionPage(wpWelcome,
     CustomMessage('MaintenanceCaption'), CustomMessage('MaintenanceDescription'),
-    CustomMessage('MaintenancePrompt'), True, False);
+    Trim(Where), True, False);
   MaintenancePage.Add(CustomMessage('ActionRepair'));
-  MaintenancePage.Add(CustomMessage('ActionReinstall'));
-  MaintenancePage.Add(CustomMessage('ActionRemove'));
+  MaintenancePage.Add(CustomMessage('ActionUninstall'));
   MaintenancePage.SelectedValueIndex := ActionRepair;
 
   ThresholdPage := CreateInputQueryPage(wpSelectDir,
@@ -215,38 +221,27 @@ end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  Result := (PageID = MaintenancePage.ID) and not IsInstalled;
+  Result := (PageID = MaintenancePage.ID) and not (InstalledForMe or InstalledForAll);
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
-  Start, Stop, ResultCode: Integer;
+  Start, Stop: Integer;
+  Removed: Boolean;
 begin
   Result := True;
-  if CurPageID = MaintenancePage.ID then
+  if (CurPageID = MaintenancePage.ID) and (MaintenancePage.SelectedValueIndex = ActionUninstall) then
   begin
-    case MaintenancePage.SelectedValueIndex of
-      ActionReinstall:
-        begin
-          Result := False;
-          if UninstallSilently then
-          begin
-            { A fresh setup sees no installation, so it asks for the install mode again.
-              It runs as the signed-in user even when this setup is elevated. }
-            ExecAsOriginalUser(ExpandConstant('{srcexe}'), '/LANG=' + ActiveLanguage, '',
-              SW_SHOW, ewNoWait, ResultCode);
-            Leave;
-          end
-          else
-            MsgBox(CustomMessage('UninstallTimeout'), mbError, MB_OK);
-        end;
-      ActionRemove:
-        begin
-          Result := False;
-          Exec(ExistingUninstaller, '', '', SW_SHOW, ewNoWait, ResultCode);
-          Leave;
-        end;
-    end;
+    { Removes every installation found, so nothing is left even if both exist }
+    Result := False;
+    Removed := True;
+    if InstalledForMe then Removed := UninstallFrom(HKCU) and Removed;
+    if InstalledForAll then Removed := UninstallFrom(HKLM) and Removed;
+    if Removed then
+      MsgBox(CustomMessage('Uninstalled'), mbInformation, MB_OK)
+    else
+      MsgBox(CustomMessage('UninstallFailed'), mbError, MB_OK);
+    Leave;
   end
   else if CurPageID = ThresholdPage.ID then
   begin

@@ -78,15 +78,14 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
   into the signed-in user's profile. The uninstaller removes the data folder of the user
   who runs it.
-- **Maintenance page** (custom `[Code]`): when the Apps entry
-  `HKA\...\Uninstall\{AppId}_is1` exists, setup offers Repair / Reinstall / Remove. Inno
-  reuses the previous install mode (`UsePreviousPrivileges`), so the mode dialog appears
-  only on a fresh install. Repair is a normal install over the existing one (threshold page
-  prefilled from `config.json`). Reinstall runs the uninstaller silently, waits for the Apps
-  entry to disappear (the uninstaller copies itself to a temp file and returns at once),
-  then starts `{srcexe}` again as the original user and closes. Remove starts the
-  uninstaller with its UI and closes.
-  CI and local builds use the same pinned version in portable mode.
+- **Maintenance page** (custom `[Code]`): not installed → the mode dialog and a normal
+  install. Installed (Apps entry `...\Uninstall\{AppId}_is1` under HKCU and/or HKLM) →
+  Inno reuses the previous mode (`UsePreviousPrivileges`, no mode dialog) and the page
+  offers **Repair** (normal install over the existing one, threshold page prefilled from
+  `config.json`) or **Uninstall** (runs the uninstaller of every installation found, silently
+  via `ShellExec` so an all-users uninstaller can elevate, then waits for its Apps entry to
+  disappear — the uninstaller copies itself to a temp file and returns at once). Changing
+  the mode means uninstall + install.
 
 Deliberately: .NET Framework 4.8 instead of .NET 8 — a 17 kB executable with no runtime to
 install outweighs the newer language and libraries for a tool this small.
@@ -116,8 +115,8 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
 3. With thresholds on, uninstall silently → nothing left, last log entry
    `SetChargeThreshold start=[0], stop=[0]`.
 4. Interactive install: mode dialog on a fresh install, threshold page validation, finish
-   page hint; with the app installed: Repair keeps the values, Reinstall shows the mode
-   dialog again, Remove uninstalls.
+   page hint; with the app installed: Repair keeps the values, Uninstall removes every
+   installation and closes.
 
 Steps 1–3 are scripted and pass. Not covered by them, so checked by hand: the wizard
 pages (step 4), how the notification looks and that it does not take focus, the F12
