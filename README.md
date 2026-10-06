@@ -28,7 +28,8 @@ key: one press switches the mode and tells you which mode you are in now.
 ## What it does
 
 - **Toggles** charge thresholds: off when they are on, on when they are off.
-- **Uses your values** when switching on (default: start below 75%, stop at 80%).
+- **Uses your values** when switching on (default: start below 75%, stop at 80%), set in
+  a small settings window.
 - **Shows the result** for two seconds in the corner of the screen and disappears by
   itself. No buttons, no window to close, and it does not steal focus from your work:
 
@@ -45,7 +46,8 @@ key: one press switches the mode and tells you which mode you are in now.
 ## What it does not do
 
 - **It does not run in the background.** No tray icon, no service, no scheduled task. It
-  starts, switches, shows the message and exits (about 3 seconds in total).
+  starts, switches, shows the message and exits (about 3 seconds in total). The only window
+  is the optional settings window.
 - **It does not change thresholds on a schedule** or by battery level. It switches only
   when you run it.
 - **It does not replace Lenovo Vantage.** Vantage is not needed, but if you have it, both
@@ -147,27 +149,25 @@ Running the app is the whole interface. Any way of starting it toggles the thres
 
 ## Configuration
 
-Start menu → **Lenovo Battery Toggle Settings** opens the settings file in Notepad:
+Start menu → **Lenovo Battery Toggle Settings** opens a small window with the two values:
 
-```json
-{
-  "start": 75,
-  "stop": 80
-}
-```
+- **Start charging below** — charging starts when the battery drops below this level,
+- **Stop charging at** — charging stops at this level.
 
-- `start` — charging starts when the battery drops below this level,
-- `stop` — charging stops at this level,
-- whole numbers, `0 <= start < stop <= 100`.
+The fields accept only numbers from 0 to 100, and **Save** stays disabled until start is
+lower than stop, so the settings cannot be broken by a typo. If the thresholds are on at
+that moment, the new values are applied right away; otherwise they are used the next time
+the app switches the thresholds on.
 
-New values apply the next time the app switches the thresholds on. Running the installer
-again also shows the current values and lets you change them.
+The values are stored in `%LOCALAPPDATA%\LenovoBatteryToggle\config.json`
+(`{"start": 75, "stop": 80}`); editing the file by hand also works, and the app reports an
+invalid file instead of using it.
 
 ## Files on your computer
 
 | Location | Content |
 |---|---|
-| Program folder (see Installation) | `lenovo-battery-toggle.exe` and the uninstaller |
+| Program folder (see Installation) | `lenovo-battery-toggle.exe`, the settings icon and the uninstaller |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
 | Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 

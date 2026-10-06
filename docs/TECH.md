@@ -29,6 +29,7 @@ where the Vantage switch reads it from.
 | `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject `O=Lenovo` |
 | `PowerDriver.cs` | WMI check for the `POWERMGR_COMPONENT` device with status `OK` |
 | `Settings.cs` | `config.json` (start/stop), defaults 75/80, validation |
+| `SettingsForm.cs` | `--settings` window: two `NumericUpDown` fields (0–100), Save enabled only when start < stop; re-applies the values when thresholds are on |
 | `Notification.cs` | Borderless, non-activating, timer-closed message |
 | `Text.cs` | Polish/English messages by `CurrentUICulture` |
 | `installer/LenovoBatteryToggle.iss` | Inno Setup 7 script |
@@ -42,6 +43,7 @@ where the Vantage switch reads it from.
 |---|---|---|
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
 | `--prepare [start stop]` | installer | Write the wizard values (or defaults), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed (invalid values, or download retried on first use), `2` driver missing |
+| `--settings` | settings shortcut | Window for start/stop; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
 | `--off` | uninstaller | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
@@ -50,7 +52,7 @@ where the Vantage switch reads it from.
 |---|---|---|
 | `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` | yes, whole folder |
-| Start menu (user or all users) | app shortcut, settings shortcut (Notepad) | yes |
+| Start menu (user or all users) | app shortcut, settings shortcut (`--settings`, gear icon) | yes |
 | `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
 
 The app writes nothing else: no registry values, no services, no scheduled tasks.

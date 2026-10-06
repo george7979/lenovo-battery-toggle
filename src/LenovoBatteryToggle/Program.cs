@@ -16,6 +16,7 @@ namespace LenovoBatteryToggle
         /// --prepare [start stop]: check the driver, write the given (or default) settings,
         ///   download the Lenovo tool; no UI, no toggle.
         /// --off: switch thresholds off silently (used by the uninstaller).
+        /// --settings: window for the start/stop values (used by the settings shortcut).
         /// </summary>
         [STAThread]
         private static int Main(string[] args)
@@ -26,6 +27,12 @@ namespace LenovoBatteryToggle
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            if (mode == "--settings")
+            {
+                Application.Run(new SettingsForm(Settings.LoadOrDefault()));
+                return Ok;
+            }
 
             // A second key press while the first toggle is still running would flip the state back
             using (var mutex = new Mutex(true, @"Local\LenovoBatteryToggle", out bool isFirst))

@@ -19,6 +19,32 @@ namespace LenovoBatteryToggle
 
         public static string Error => Pick("Błąd: ", "Error: ");
 
+        public static string SettingsTitle => "Lenovo Battery Toggle Settings";
+
+        public static string SettingsIntro => Pick(
+            "Progi używane, gdy przełącznik włącza ograniczenie ładowania. Bateria zaczyna się ładować poniżej wartości start i przestaje przy wartości stop.",
+            "Thresholds used when the toggle switches charge limiting on. The battery starts charging below the start value and stops at the stop value.");
+
+        public static string StartLabel => Pick("Ładuj, gdy poziom spadnie poniżej (%):", "Start charging below (%):");
+
+        public static string StopLabel => Pick("Przestań ładować przy (%):", "Stop charging at (%):");
+
+        public static string Save => Pick("Zapisz", "Save");
+
+        public static string Cancel => Pick("Anuluj", "Cancel");
+
+        public static string SettingsApplyNow => Pick(
+            "Jeśli progi są włączone, nowe wartości zadziałają od razu.",
+            "If thresholds are on, the new values apply right away.");
+
+        public static string StartBelowStop => Pick(
+            "Wartość start musi być mniejsza niż stop.",
+            "The start value must be lower than the stop value.");
+
+        public static string SavedNotApplied => Pick(
+            "Ustawienia zapisane, ale nie udało się ich teraz zastosować: ",
+            "Settings saved, but they could not be applied now: ");
+
         public static string DriverMissing => Pick(
             "Brak sterownika Lenovo Power and Battery. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo.",
             "The Lenovo Power and Battery driver is missing. Run Windows Update or install package DS541411 from Lenovo Support.");

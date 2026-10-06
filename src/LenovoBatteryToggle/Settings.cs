@@ -36,7 +36,14 @@ namespace LenovoBatteryToggle
             return settings;
         }
 
-        /// <summary>Writes the values chosen in the installer (validated first).</summary>
+        /// <summary>Current values for the settings window; defaults when the file is missing or broken.</summary>
+        public static Settings LoadOrDefault()
+        {
+            try { return Load(); }
+            catch (Exception) { return new Settings(); }
+        }
+
+        /// <summary>Writes the values chosen in the installer or the settings window (validated first).</summary>
         public static void Save(int start, int stop)
         {
             if (!(start >= 0 && stop <= 100 && start < stop))

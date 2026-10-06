@@ -39,7 +39,9 @@ other ThinkPad owners.
 - Messages are in Polish on a Polish Windows and in English everywhere else.
 
 ### FR3: Settings
-- Start and stop values live in one settings file, editable in Notepad from the Start menu.
+- Start and stop values are set in a small settings window opened from the Start menu.
+  It accepts only valid values, so a typo cannot break the settings; when thresholds are on,
+  saving applies the new values right away.
 - The installer asks for the values and keeps the current ones on upgrade.
 - Invalid values (not `0 <= start < stop <= 100`) are reported, never sent to the battery.
 

@@ -85,7 +85,7 @@ Source: "settings.ico"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 ; Named after the app so the Start menu lists it right below the app itself
-Name: "{autoprograms}\{#AppName} Settings"; Filename: "{sys}\notepad.exe"; Parameters: """{#DataDir}\config.json"""; IconFilename: "{app}\settings.ico"
+Name: "{autoprograms}\{#AppName} Settings"; Filename: "{app}\{#AppExe}"; Parameters: "--settings"; IconFilename: "{app}\settings.ico"
 
 [InstallDelete]
 ; Settings shortcut names used by pre-release builds; Repair replaces them with the one above
