@@ -58,10 +58,13 @@ other ThinkPad owners.
 - A standard Windows installer with Start menu entries (the toggle and its settings) and
   an entry in Apps.
 - A fresh install lets the user choose: for the current user only, or for all users.
+- When setup closes the user knows whether thresholds are on: the last page shows the
+  current state and offers to switch them on with the chosen values.
 - With the app installed, the installer offers only Repair (keeps the settings, also used
   for updates) or Uninstall (every installation found).
 - The uninstaller switches thresholds off and removes everything the app wrote,
-  including folders.
+  including folders, whether it is started from Windows Settings or from the installer.
+  Lenovo's tool is never run with administrator rights from a place the user can change.
 
 ## Non-functional requirements
 

@@ -93,8 +93,10 @@ It belongs to Lenovo, so this project does not redistribute it. Instead:
   (or on first use, if the download during installation failed),
 - it **checks the digital signature** and uses the file only if it is validly signed by
   Lenovo; otherwise the file is deleted,
-- it keeps the file in the app's data folder and runs it in the background, without a
-  console window.
+- it keeps the file in the app's data folder, or, with an all-users installation, in the
+  program folder, which only administrators can change: the uninstaller runs with
+  administrator rights and may use only that copy, never one from your profile,
+- it runs the file in the background, without a console window.
 
 The app calls it with three commands: `status` (read the current state), `on <stop> <start>`
 and `off`.
@@ -124,6 +126,11 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
 4. On the **Charge thresholds** page choose the values used when the thresholds are on.
 5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
    key press works even offline.
+6. The last page says whether the thresholds are on or off right now and offers
+   **Switch charge thresholds on now** (checked). Leave it checked and the thresholds are
+   switched on with your values when you click Finish, confirmed by the usual
+   notification; uncheck it and they stay as they are. (On a repair with the thresholds
+   already on, the option applies the values from the threshold page.)
 
 Running the installer when the app is already installed shows where it is installed and
 offers two choices:
@@ -173,8 +180,8 @@ is brought into that range.
 
 | Location | Content |
 |---|---|
-| Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon and the uninstaller |
-| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
+| Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon, the uninstaller and, for an all-users installation, `ChargeThreshold.exe` |
+| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and, for a per-user installation, `ChargeThreshold.exe` (downloaded from Lenovo) |
 | Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 
 Apart from the standard entry in Windows Apps, created by the installer, nothing else is
@@ -189,6 +196,9 @@ Windows Settings → Apps → **Lenovo Battery Toggle** → Uninstall. The unins
 1. switches the charge thresholds **off**, so the battery returns to its factory behaviour,
 2. deletes the program folder, the whole `%LOCALAPPDATA%\LenovoBatteryToggle` folder and
    the Start menu entries.
+
+This works the same whether you uninstall from Windows Settings or with the installer's
+**Uninstall** action.
 
 With an all-users installation, settings are per user: the uninstaller removes the data
 folder of the user who runs it.
@@ -209,7 +219,9 @@ https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThre
 
 and save it as `%LOCALAPPDATA%\LenovoBatteryToggle\ChargeThreshold.exe`. The app accepts
 it only with a valid Lenovo signature, and the uninstaller removes it like any other file
-of the app. The message window can be copied with Ctrl+C.
+of the app. The message window can be copied with Ctrl+C. With an all-users installation,
+also run the installer's **Repair** once the download works again: it puts a copy in the
+program folder, which the uninstaller needs to switch the thresholds off.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed
@@ -225,7 +237,7 @@ installs the driver again and creates the branch.
 Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.1.0 -Iscc "C:\path\to\ISCC.exe"
+.\build.ps1 -Version 0.1.1 -Iscc "C:\path\to\ISCC.exe"
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:

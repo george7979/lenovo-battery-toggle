@@ -15,36 +15,36 @@ namespace LenovoBatteryToggle
         public const string DownloadUrl =
             "https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThreshold/ChargeThreshold.exe";
 
+        /// <summary>The user's copy, in the profile.</summary>
         public static readonly string ToolPath = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
+
+        /// <summary>
+        /// The copy next to the app, made only by an all-users setup (--install-tool), so it sits
+        /// in Program Files where only administrators can write. It is the only copy an elevated
+        /// process may run: the user's copy can be changed by the user's unelevated processes.
+        /// </summary>
+        public static readonly string ProtectedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChargeThreshold.exe");
 
         private readonly string _path;
 
         private ChargeThresholdTool(string path) { _path = path; }
 
         /// <summary>
-        /// Uses the cached copy (downloaded earlier or saved there by hand), or downloads it
-        /// from Lenovo. The file is Lenovo's, so releases do not bundle it.
+        /// Uses the protected copy, else the user's copy (downloaded earlier or saved there by
+        /// hand), else downloads it from Lenovo. The file is Lenovo's, so releases do not bundle it.
         /// </summary>
         public static ChargeThresholdTool Ensure()
         {
+            var protectedCopy = Protected();
+            if (protectedCopy != null) return protectedCopy;
+            if (Elevation.IsElevated) throw new InvalidOperationException(Text.Elevated);
+
             var path = ToolPath;
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Settings.DataDirectory);
-                var temp = path + ".download";
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                try
-                {
-                    using (var client = new WebClient()) client.DownloadFile(DownloadUrl, temp);
-                }
-                catch (WebException ex)
-                {
-                    File.Delete(temp);
-                    throw new ToolUnavailableException(Text.DownloadFailed(ex.Message, DownloadUrl, path), ex);
-                }
-                File.Move(temp, path);
+                Download(path);
             }
-
             if (!Signature.IsSignedByLenovo(path))
             {
                 File.Delete(path);
@@ -53,9 +53,53 @@ namespace LenovoBatteryToggle
             return new ChargeThresholdTool(path);
         }
 
-        /// <summary>The cached copy, or null when the app never downloaded it.</summary>
-        public static ChargeThresholdTool Existing() =>
-            File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath) ? new ChargeThresholdTool(ToolPath) : null;
+        /// <summary>
+        /// A copy that is already there, never downloads; null when there is none. An elevated
+        /// process gets only the protected copy.
+        /// </summary>
+        public static ChargeThresholdTool Existing()
+        {
+            var protectedCopy = Protected();
+            if (protectedCopy != null || Elevation.IsElevated) return protectedCopy;
+            return File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath) ? new ChargeThresholdTool(ToolPath) : null;
+        }
+
+        /// <summary>
+        /// Downloads the protected copy next to the app (--install-tool, run by an elevated
+        /// all-users setup). The signature is checked on the file in its final place.
+        /// </summary>
+        public static void InstallProtected()
+        {
+            if (Protected() != null) return;
+            Download(ProtectedPath);
+            if (!Signature.IsSignedByLenovo(ProtectedPath))
+            {
+                File.Delete(ProtectedPath);
+                throw new ToolUnavailableException(Text.BadSignature(DownloadUrl, ProtectedPath));
+            }
+        }
+
+        // A protected copy that fails the check is ignored, not deleted: an unelevated process
+        // is not allowed to delete it
+        private static ChargeThresholdTool Protected() =>
+            File.Exists(ProtectedPath) && Signature.IsSignedByLenovo(ProtectedPath) ? new ChargeThresholdTool(ProtectedPath) : null;
+
+        private static void Download(string path)
+        {
+            var temp = path + ".download";
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            try
+            {
+                using (var client = new WebClient()) client.DownloadFile(DownloadUrl, temp);
+            }
+            catch (WebException ex)
+            {
+                File.Delete(temp);
+                throw new ToolUnavailableException(Text.DownloadFailed(ex.Message, DownloadUrl, path), ex);
+            }
+            if (File.Exists(path)) File.Delete(path);
+            File.Move(temp, path);
+        }
 
         public ThresholdState Status() => ThresholdState.Parse(Run("status"));
 

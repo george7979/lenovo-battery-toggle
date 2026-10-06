@@ -51,6 +51,10 @@ namespace LenovoBatteryToggle
             "Brak sterownika Lenovo Power and Battery. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo.",
             "The Lenovo Power and Battery driver is missing. Run Windows Update or install package DS541411 from Lenovo Support.");
 
+        public static string Elevated => Pick(
+            "Aplikację uruchomiono jako administrator, a ta instalacja nie ma własnej kopii ChargeThreshold.exe w folderze programu. Uruchom ją zwykłym skrótem albo klawiszem.",
+            "The app was started as administrator, and this installation has no copy of ChargeThreshold.exe in the program folder. Start it normally, from its shortcut or key.");
+
         public static string BadSignature(string url, string path) => Pick(
             $"ChargeThreshold.exe nie ma ważnego podpisu Lenovo i został usunięty. Pobierz go ręcznie z\n{url}\ni zapisz jako\n{path}",
             $"ChargeThreshold.exe has no valid Lenovo signature and was deleted. Download it manually from\n{url}\nand save it as\n{path}");

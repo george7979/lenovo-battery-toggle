@@ -25,8 +25,9 @@ where the Vantage switch reads it from.
 | File | Role |
 |---|---|
 | `src/LenovoBatteryToggle/Program.cs` | Modes, single-instance mutex, toggle flow |
-| `ChargeThresholdTool.cs` | Download, cache and run `ChargeThreshold.exe`; parse `status` |
-| `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject `O=Lenovo` |
+| `ChargeThresholdTool.cs` | Download, cache and run `ChargeThreshold.exe` (user copy, or the protected copy of an all-users install); parse `status` |
+| `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject with `CN=Lenovo` and `O=Lenovo` as whole name parts |
+| `Elevation.cs` | Whether the process is the elevated half of a split UAC token (`TokenElevationTypeFull`) |
 | `PowerDriver.cs` | WMI check for the `POWERMGR_COMPONENT` device with status `OK` |
 | `Settings.cs` | `config.json`: `start`, `stop` (defaults 75/80, validated) and `notificationSeconds` (default 4, clamped to 2–10; missing in older files) |
 | `SettingsForm.cs` | `--settings` window: two `NumericUpDown` fields (0–100), Save enabled only when start < stop; re-applies the values when thresholds are on |
@@ -42,16 +43,19 @@ where the Vantage switch reads it from.
 | Command | Used by | Behaviour |
 |---|---|---|
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
-| `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
+| `--on` | installer finish page | As above, but always `on <stop> <start>` (applies the saved values when already on) |
+| `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool, read the state. No UI, no change. Exit `0` ready with thresholds off, `4` ready with thresholds on, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
 | `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
-| `--off` | uninstaller | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
+| `--install-tool` | all-users setup (elevated) | Download `ChargeThreshold.exe` next to the app (`{app}`), verify it there. Exit `0` OK (also when a valid copy is already there), `1` failed, `3` not obtained |
+| `--off` | uninstaller, setup's Uninstall action | Switch thresholds off if a tool copy and the driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
 
 | Location | Content | Removed by uninstaller |
 |---|---|---|
 | `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
-| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` | yes, whole folder |
+| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` (per-user install, or fallback) | yes, whole folder |
+| `C:\Program Files\Lenovo Battery Toggle\ChargeThreshold.exe` | protected copy (all-users install) | yes |
 | Start menu (user or all users) | app shortcut, settings shortcut (`--settings`, gear icon) | yes |
 | `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
 
@@ -85,6 +89,23 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
   into the signed-in user's profile. The uninstaller removes the data folder of the user
   who runs it.
+- **Never elevated with the user's files.** The user's copy of `ChargeThreshold.exe` lives
+  in `%LOCALAPPDATA%`, which the same user's unelevated processes can write, so starting it
+  from an elevated process would be a UAC bypass. An all-users uninstaller is elevated and
+  Inno cannot run anything as the original user at uninstall time, so an all-users setup
+  runs `--install-tool` (plain `Exec`, elevated) before `--prepare`: the app downloads the
+  tool into `{app}`, writable by administrators only, and checks the signature on the file
+  in that final place. Tool lookup (`ChargeThresholdTool`): the protected copy next to the
+  app if it is there and signed; otherwise, only when not `Elevation.IsElevated`, the user's
+  copy (downloaded if missing). Elevated with no protected copy, `Ensure()` refuses and
+  `Existing()` returns null, so `--off` does nothing. A protected copy that fails the check
+  is ignored, not deleted (an unelevated process may not delete it). The tool imports only
+  `KERNEL32` and `RPCRT4` (KnownDLLs). Without UAC (`TokenElevationTypeDefault`) there is no
+  boundary and the user's copy is used as before. Setup's Uninstall action also runs
+  `--off` through `ExecAsOriginalUser` before an all-users uninstaller, for an install whose
+  `--install-tool` failed. Repair of a 0.1.0 all-users install keeps its old `--off` entry in
+  the uninstall log (Repair appends, the latest `RunOnceId` entry runs); it now runs the new
+  app, which uses the protected copy.
 - **Maintenance page** (custom `[Code]`): not installed → the mode dialog and a normal
   install. Installed (Apps entry `...\Uninstall\{AppId}_is1` under HKCU and/or HKLM) →
   Inno reuses the previous mode (`UsePreviousPrivileges`, no mode dialog) and the page
@@ -105,7 +126,7 @@ URL changes with every version; Windows Update installs the driver reliably.
 Local (Windows, from WSL — see `CLAUDE.md`):
 
 ```powershell
-.\build.ps1 -Version 0.1.0 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
+.\build.ps1 -Version 0.1.1 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
 ```
 
 CI (`.github/workflows/build.yml`): a push to `dev` or `main` that touches `src/`,
@@ -129,20 +150,29 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
 3. With thresholds on, uninstall silently → nothing left, last log entry
    `SetChargeThreshold start=[0], stop=[0]`.
 4. Interactive install: mode dialog on a fresh install, threshold page validation, finish
-   page hint; with the app installed: Repair keeps the values, Uninstall removes every
-   installation and closes.
+   page with the current state, the *Switch on now* checkbox (or *Apply now* when already
+   on) and the hint to start the app from the Start menu; with the app installed: Repair
+   keeps the values, Uninstall removes every installation and closes.
+5. All-users install: `ChargeThreshold.exe` in the program folder and none in the profile;
+   with thresholds on, uninstall from Windows Settings → thresholds off.
 
 Steps 1–3 are scripted and pass; `--prepare <start> <stop>` was checked to write valid
 values, reject invalid ones and keep `notificationSeconds`; a file without that key reads
 as 4 s; with 2 s and 4 s the toggle process takes 2.4 s and 4.4 s; replacing the cached
 tool with a file signed by someone else makes `--prepare` exit `3` and the toggle delete
-the file. Not covered by them, so checked by hand: the wizard pages
-(step 4), the settings window (Save disabled when start >= stop, values applied at once
+the file. `--install-tool` was checked to download and verify the protected copy, to keep a
+valid one on Repair, and `--prepare` to use it without creating a profile copy; a
+protected copy signed by someone else is ignored and the profile copy is used. Not covered
+by the scripts, so checked by hand: the wizard pages (step 4), the all-users uninstall
+(step 5), the settings window (Save disabled when start >= stop, values applied at once
 when thresholds are on), how the notification looks and that it does not take focus, the
 F12 assignment in Vantage, and the installer messages for a missing driver or a failed
 download (silent mode suppresses them, and the test machine has the driver).
 
 ## Known issues
 
+- An all-users install whose `--install-tool` download failed has no protected copy: its
+  uninstaller from Windows Settings leaves the thresholds as they are (setup's Uninstall
+  action still switches them off); Repair with an internet connection fixes it.
 - Vantage shows the switch as "off" regardless of the state when the
   `PWRMGRV\ConfKeys` branch is missing; fix in README → Troubleshooting.

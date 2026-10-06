@@ -14,7 +14,7 @@ temp folder and build there:
 WIN_TEMP=$(wslpath "$(cmd.exe /c 'echo %TEMP%' 2>/dev/null | tr -d '\r')")
 W="$WIN_TEMP/lbt-build"
 rm -rf "$W" && mkdir -p "$W" && git ls-files -co --exclude-standard | tar -cf - -T - | tar -xf - -C "$W"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-build\build.ps1" -Version 0.1.0 -Iscc "$env:TEMP\lbt-tools\inno\ISCC.exe" -Dotnet "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-build\build.ps1" -Version 0.1.1 -Iscc "$env:TEMP\lbt-tools\inno\ISCC.exe" -Dotnet "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"'
 ```
 
 - `-Dotnet` points at a per-user .NET SDK (`%LOCALAPPDATA%\Microsoft\dotnet`); with a
@@ -35,6 +35,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-bui
 - **Process checks must exclude their own process.** Filtering `Win32_Process` by a
   command line that contains the searched text also matches the query itself; exclude `$PID`
   or wait on the process object returned by `Start-Process -PassThru`.
+- **No braces inside `{ ... }` comments in the `.iss` `[Code]` section**: `{app}` in such a
+  comment ends it early (*Identifier expected*). Write "the program folder" instead. Nor may
+  a `[Code]` line start with `[` (an array continued on a new line): it is read as a section
+  tag (*Invalid section tag*).
 - **WQL with quotes inside bash `'...'`** breaks (`''` becomes empty). Put such PowerShell
   in a file under `.work/` and run it with `-File`.
 - **Testing toggles the real battery.** Leave thresholds in the state the owner had before

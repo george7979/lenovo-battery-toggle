@@ -11,7 +11,7 @@
     <RootNamespace>LenovoBatteryToggle</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>Lenovo Battery Toggle</Product>
     <Description>Toggles ThinkPad battery charge thresholds on and off</Description>
     <Copyright>Jerzy Maczewski</Copyright>

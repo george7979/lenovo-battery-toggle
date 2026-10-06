@@ -1,4 +1,4 @@
-﻿; Inno Setup 6 script. Build: ISCC.exe /DAppVersion=0.1.0 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
+﻿; Inno Setup 7 script. Build: ISCC.exe /DAppVersion=0.1.1 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
 ; Setup asks: install for me (no administrator rights, %LOCALAPPDATA%\Programs) or for all
 ; users (UAC, Program Files). Settings and the Lenovo tool always live in the user's profile.
 
@@ -78,8 +78,16 @@ en.Uninstalled=Lenovo Battery Toggle has been uninstalled.
 pl.Uninstalled=Lenovo Battery Toggle został odinstalowany.
 en.UninstallFailed=The program could not be uninstalled completely. Remove it from Windows Settings, Apps.
 pl.UninstallFailed=Nie udało się całkowicie odinstalować programu. Usuń go w Ustawieniach Windows (Aplikacje).
-en.FinishedHint=To toggle thresholds with one key, open Lenovo Vantage, find the user-defined key (F12 on many ThinkPads) and set it to open:%n%n{app}\{#AppExe}
-pl.FinishedHint=Aby przełączać progi jednym klawiszem, otwórz Lenovo Vantage, znajdź klawisz definiowany przez użytkownika (F12 w wielu ThinkPadach) i ustaw w nim otwieranie pliku:%n%n{app}\{#AppExe}
+en.ThresholdsAreOff=Charge thresholds are off now: the battery charges to 100%.
+pl.ThresholdsAreOff=Progi ładowania są teraz wyłączone: bateria ładuje się do 100 %.
+en.ThresholdsAreOn=Charge thresholds are on now.
+pl.ThresholdsAreOn=Progi ładowania są teraz włączone.
+en.SwitchOnNow=Switch charge thresholds on now (start below %1%%, stop at %2%%)
+pl.SwitchOnNow=Włącz teraz progi ładowania (start poniżej %1 %%, stop przy %2 %%)
+en.ApplyNow=Apply these charge thresholds now (start below %1%%, stop at %2%%)
+pl.ApplyNow=Zastosuj teraz te progi ładowania (start poniżej %1 %%, stop przy %2 %%)
+en.FinishedHint=To switch the charge thresholds on or off later, start Lenovo Battery Toggle from the Start menu. Each start toggles them.
+pl.FinishedHint=Aby później włączyć lub wyłączyć progi ładowania, uruchom Lenovo Battery Toggle z menu Start. Każde uruchomienie je przełącza.
 
 [Files]
 Source: "{#SourceDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
@@ -96,13 +104,22 @@ Name: "{autoprograms}\{#AppName} Settings"; Filename: "{app}\{#AppExe}"; Paramet
 Type: files; Name: "{autoprograms}\Ustawienia progów ładowania.lnk"
 Type: files; Name: "{autoprograms}\Charge threshold settings.lnk"
 
+[Run]
+; Finish page checkbox, so the user decides and knows the state when setup closes. Runs as
+; the signed-in user; silent installs leave the thresholds as they are.
+Filename: "{app}\{#AppExe}"; Parameters: "--on"; Description: "{code:SwitchOnDescription}"; Flags: postinstall runasoriginaluser nowait skipifsilent; Check: CanSwitchOn
+
 [UninstallRun]
-; Leave the battery at its factory behaviour before the files go away
+; Leave the battery at its factory behaviour before the files go away. A per-user uninstaller
+; runs unelevated and uses the user's copy of the Lenovo tool; an all-users uninstaller is
+; elevated and the app then uses only the copy setup put in {app} (see --install-tool).
 Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"
 
 [UninstallDelete]
 ; Everything the app ever wrote: config.json, the downloaded ChargeThreshold.exe, any subfolder
 Type: filesandordirs; Name: "{#DataDir}"
+; Downloaded by --install-tool, so not removed with the [Files] entries
+Type: files; Name: "{app}\ChargeThreshold.exe"
 ; {app} is not listed: Inno removes its own files and the empty folder, and a
 ; filesandordirs entry would wipe a pre-existing folder chosen as the install directory
 
@@ -113,12 +130,16 @@ const
   UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6C1E8F4A-2B7D-4E59-9A3C-5D0F1B8E7A24}_is1';
   ActionRepair = 0;
   ActionUninstall = 1;
+  { Exit codes of --prepare }
+  PrepareThresholdsOff = 0;
+  PrepareThresholdsOn = 4;
 
 var
   ThresholdPage: TInputQueryWizardPage;
   MaintenancePage: TInputOptionWizardPage;
   InstalledForMe, InstalledForAll: Boolean;
   Leaving: Boolean;
+  PrepareResult: Integer;
 
 { CustomMessage leaves %n as text; turn it into a line break }
 function Msg(const Name: String): String;
@@ -162,6 +183,20 @@ begin
   Result := not RegKeyExists(Root, UninstallKey);
 end;
 
+{ Fallback for an all-users install whose --install-tool failed: its elevated uninstaller has
+  no tool it may run, so switch thresholds off here, as the signed-in user, before starting it }
+procedure TurnOffAsOriginalUser(Root: Integer);
+var
+  ResultCode: Integer;
+begin
+  try
+    ExecAsOriginalUser(AddBackslash(RegValue(Root, 'InstallLocation')) + '{#AppExe}', '--off',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  except
+    { Uninstall goes on; thresholds stay as they are }
+  end;
+end;
+
 function ConfigPath: String;
 begin
   Result := ExpandConstant('{#DataDir}\config.json');
@@ -194,6 +229,7 @@ var
   Start, Stop: Integer;
   Where: String;
 begin
+  PrepareResult := -1;
   Start := 75;
   Stop := 80;
   { An upgrade keeps the user's values }
@@ -244,6 +280,9 @@ begin
     { Removes every installation found, so nothing is left even if both exist }
     Result := False;
     Removed := True;
+    { First, while the Lenovo tool is still there: an elevated setup starts the per-user
+      uninstaller elevated too, so its own --off does nothing, and it deletes the tool }
+    if InstalledForAll then TurnOffAsOriginalUser(HKLM);
     if InstalledForMe then Removed := UninstallFrom(HKCU) and Removed;
     if InstalledForAll then Removed := UninstallFrom(HKLM) and Removed;
     if Removed then
@@ -270,6 +309,13 @@ var
 begin
   if CurStep <> ssPostInstall then Exit;
 
+  { All users: download the Lenovo tool into the program folder, where only administrators
+    can write, so the elevated uninstaller has a copy it may run. Done first, so --prepare
+    uses this copy instead of downloading one into the profile. If it fails, --prepare falls
+    back to the profile and reports as usual. }
+  if IsAdminInstallMode then
+    Exec(ExpandConstant('{app}\{#AppExe}'), '--install-tool', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
   { The app writes the settings, checks the driver and downloads the Lenovo tool, so the first
     key press works offline. It runs as the signed-in user: with an all-users install setup is
     elevated, and the settings must still land in that user's profile. }
@@ -277,18 +323,42 @@ begin
     '--prepare ' + Trim(ThresholdPage.Values[0]) + ' ' + Trim(ThresholdPage.Values[1]),
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
+    PrepareResult := ResultCode;
     if ResultCode = 2 then
       SuppressibleMsgBox(Msg('DriverMissing'), mbError, MB_OK, IDOK)
     else if ResultCode = 3 then
       SuppressibleMsgBox(ExpandConstant(Msg('ToolUnavailable')), mbError, MB_OK, IDOK)
-    else if ResultCode <> 0 then
+    else if (ResultCode <> PrepareThresholdsOff) and (ResultCode <> PrepareThresholdsOn) then
       SuppressibleMsgBox(Msg('PrepareFailed'), mbInformation, MB_OK, IDOK);
   end;
 end;
 
-procedure CurPageChanged(CurPageID: Integer);
+{ The finish page checkbox appears only when --prepare could read the state }
+function CanSwitchOn: Boolean;
 begin
-  if CurPageID = wpFinished then
-    WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 +
-      ExpandConstant(Msg('FinishedHint'));
+  Result := (PrepareResult = PrepareThresholdsOff) or (PrepareResult = PrepareThresholdsOn);
+end;
+
+function SwitchOnDescription(Param: String): String;
+var
+  Name: String;
+begin
+  if PrepareResult = PrepareThresholdsOn then Name := 'ApplyNow' else Name := 'SwitchOnNow';
+  { A line must not start with "[": the compiler would read it as a section tag }
+  Result := FmtMessage(CustomMessage(Name), [Trim(ThresholdPage.Values[0]),
+    Trim(ThresholdPage.Values[1])]);
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+var
+  State: String;
+begin
+  if CurPageID <> wpFinished then Exit;
+  State := '';
+  if PrepareResult = PrepareThresholdsOff then State := Msg('ThresholdsAreOff') + #13#10#13#10;
+  if PrepareResult = PrepareThresholdsOn then State := Msg('ThresholdsAreOn') + #13#10#13#10;
+  WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 +
+    State + ExpandConstant(Msg('FinishedHint'));
+  { The checkbox list was placed under the shorter text; move it below the longer one }
+  WizardForm.RunList.Top := WizardForm.RunList.Top + WizardForm.AdjustLabelHeight(WizardForm.FinishedLabel);
 end;

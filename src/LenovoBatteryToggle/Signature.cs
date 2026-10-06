@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
@@ -7,7 +8,8 @@ namespace LenovoBatteryToggle
     /// <summary>
     /// Checks that a file carries a valid Authenticode signature issued to Lenovo.
     /// WinVerifyTrust verifies the file hash and the certificate chain; the subject
-    /// check then makes sure the signer is Lenovo and not any trusted publisher.
+    /// check then requires CN=Lenovo and O=Lenovo as whole name parts, so neither another
+    /// trusted publisher nor one whose name merely starts with "Lenovo" passes.
     /// </summary>
     internal static class Signature
     {
@@ -16,8 +18,12 @@ namespace LenovoBatteryToggle
             if (!VerifyTrust(path)) return false;
             try
             {
-                var certificate = X509Certificate.CreateFromSignedFile(path);
-                return certificate.Subject.Contains("O=Lenovo");
+                var certificate = new X509Certificate2(X509Certificate.CreateFromSignedFile(path));
+                var parts = certificate.SubjectName.Format(true)
+                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => part.Trim())
+                    .ToList();
+                return parts.Contains("CN=Lenovo") && parts.Contains("O=Lenovo");
             }
             catch (Exception)
             {
