@@ -89,8 +89,8 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   disappear — the uninstaller copies itself to a temp file and returns at once). Changing
   the mode means uninstall + install.
 
-Deliberately: .NET Framework 4.8 instead of .NET 8 — a 17 kB executable with no runtime to
-install outweighs the newer language and libraries for a tool this small.
+Deliberately: .NET Framework 4.8 instead of .NET 8 — a 45 kB executable (icons included)
+with no runtime to install outweighs the newer language and libraries for a tool this small.
 
 Deliberately: no automatic driver installation — it needs elevation and Lenovo's package
 URL changes with every version; Windows Update installs the driver reliably.
@@ -103,14 +103,18 @@ Local (Windows, from WSL — see `CLAUDE.md`):
 .\build.ps1 -Version 0.1.0 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
 ```
 
-CI: push to `main` builds an artifact `0.0.0-dev.<run>`; tag `v<version>` builds and
-publishes a GitHub release with `lenovo-battery-toggle-<version>-setup.exe`.
+CI: a push to `main` that touches `src/`, `installer/`, `build.ps1` or the workflow (or a
+manual run) builds an artifact `0.0.0-dev.<run>`; tag `v<version>` builds and publishes a
+GitHub release with `lenovo-battery-toggle-<version>-setup.exe`.
+
+Icons: `uv run --with pillow python assets/make_icon.py` regenerates both `.ico` files and
+`assets/icon-256.png`.
 
 ## Testing
 
 Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
 
-1. Silent install: `setup.exe /VERYSILENT /SUPPRESSMSGBOXES /LANG=pl` → program and data
+1. Silent install: `setup.exe /VERYSILENT /SUPPRESSMSGBOXES /LANG=pl /CURRENTUSER` → program and data
    folders, both Start menu shortcuts, Apps entry, `config.json` and the tool present.
 2. Run the app twice → thresholds on, then off; check with `ChargeThreshold.exe status`
    and the `SetChargeThreshold` events in the `Lenovo-Power-BaseModule/Operational` log.
@@ -120,9 +124,11 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
    page hint; with the app installed: Repair keeps the values, Uninstall removes every
    installation and closes.
 
-Steps 1–3 are scripted and pass. Not covered by them, so checked by hand: the wizard
-pages (step 4), how the notification looks and that it does not take focus, the F12
-assignment in Vantage, and the installer messages for a missing driver or a failed
+Steps 1–3 are scripted and pass; `--prepare <start> <stop>` was checked to write valid
+values and reject invalid ones. Not covered by them, so checked by hand: the wizard pages
+(step 4), the settings window (Save disabled when start >= stop, values applied at once
+when thresholds are on), how the notification looks and that it does not take focus, the
+F12 assignment in Vantage, and the installer messages for a missing driver or a failed
 download (silent mode suppresses them, and the test machine has the driver).
 
 ## Known issues

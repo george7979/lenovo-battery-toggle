@@ -89,7 +89,8 @@ thresholds from scripts, without Vantage
 ([Lenovo knowledge base article](https://forums.lenovo.com/t5/Lenovo-Vantage-Knowledge-Base/Q-amp-A-setting-a-ThinkPad-battery-charge-threshold-by-script/ta-p/4345631)).
 It belongs to Lenovo, so this project does not redistribute it. Instead:
 
-- the app **downloads it from Lenovo** (`download.lenovo.com`) once, during installation,
+- the app **downloads it from Lenovo** (`download.lenovo.com`) once, during installation
+  (or on first use, if the download during installation failed),
 - it **checks the digital signature** and uses the file only if it is validly signed by
   Lenovo; otherwise the file is deleted,
 - it keeps the file in the app's data folder and runs it in the background, without a
@@ -103,7 +104,7 @@ and `off`.
 - A **ThinkPad** with **Windows 10 or 11**.
 - The **Lenovo Power and Battery** driver. Windows Update installs it automatically on
   ThinkPads; it is also available from Lenovo Support as package
-  [DS541411](https://support.lenovo.com/downloads/ds541411). The installer checks for it
+  [DS541411](https://support.lenovo.com/us/en/downloads/ds541411). The installer checks for it
   and tells you if it is missing.
 - **Internet access during installation**, for the download of `ChargeThreshold.exe`.
 
@@ -136,7 +137,8 @@ To switch between "for me" and "for all users", uninstall and install again.
 
 ## Usage
 
-Running the app is the whole interface. Any way of starting it toggles the thresholds:
+Starting the app is the whole interface: every start toggles the thresholds. (The
+*Lenovo Battery Toggle Settings* shortcut is the exception; it opens the settings window.)
 
 - **Start menu** → *Lenovo Battery Toggle*.
 - **The F12 user-defined key.** In Lenovo Vantage, open the setting of the user-defined key
@@ -145,7 +147,8 @@ Running the app is the whole interface. Any way of starting it toggles the thres
   (`AppData` is a hidden folder, so pasting is easier than browsing).
 - **A Windows keyboard shortcut**, without Vantage. Right-click the Start menu entry →
   *Open file location* → *Properties* of the shortcut → **Shortcut key**, for example
-  `Ctrl+Alt+B`.
+  `Ctrl+Alt+B`. With an all-users installation Windows asks for administrator rights to
+  save the change.
 
 ## Configuration
 
@@ -167,13 +170,14 @@ invalid file instead of using it.
 
 | Location | Content |
 |---|---|
-| Program folder (see Installation) | `lenovo-battery-toggle.exe`, the settings icon and the uninstaller |
+| Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon and the uninstaller |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
 | Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 
-The app writes nothing else: no registry settings, no services, no scheduled tasks, no logs.
-The Lenovo driver itself records the threshold state in its own registry key, exactly as it
-does when you use Vantage.
+Apart from the standard entry in Windows Apps, created by the installer, nothing else is
+written: no registry settings, no services, no scheduled tasks, no logs. The Lenovo driver
+itself records the threshold state in its own registry key, exactly as it does when you use
+Vantage.
 
 ## Uninstall
 
@@ -196,8 +200,9 @@ internet connection or a firewall blocking `download.lenovo.com`.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed
-for the first time. If that branch is gone (for example after moving a disk to another
-ThinkPad), reinstall the driver from scratch: in an administrator terminal run
+for the first time. If that branch is missing, or still describes the battery of another
+laptop (for example after moving the disk from another ThinkPad), reinstall the driver from
+scratch: in an administrator terminal run
 `pnputil /remove-device` for the *Lenovo Power and Battery* device and
 `pnputil /delete-driver` for its `powermgr.inf` package, then restart. Windows Update
 installs the driver again and creates the branch.
@@ -211,8 +216,8 @@ Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:
-[docs/TECH.md](docs/TECH.md). Every push to `main` is built by GitHub Actions; tags `v*`
-publish a release.
+[docs/TECH.md](docs/TECH.md). GitHub Actions builds every push to `main` that changes the
+code or the installer; tags `v*` publish a release.
 
 ## Disclaimer
 

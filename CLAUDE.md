@@ -20,6 +20,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\Users\LENOVO\A
 - Inno Setup 7.1.0 is unpacked portable in `%TEMP%\lbt-tools\inno` (installer with
   `/PORTABLE=1 /CURRENTUSER /DIR=...`). If missing, repeat what the CI step
   *Install Inno Setup* does.
+- Icons: `uv run --with pillow python assets/make_icon.py` (both `.ico` files and the README
+  image come from this one script; never edit the `.ico` files by hand).
 
 ## Pitfalls
 
@@ -37,5 +39,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\Users\LENOVO\A
 
 ## Release
 
-Push to `main` builds a CI artifact. A release is a tag `v<version>` on `main`; propose the
-tag only after the owner tested the build on the ThinkPad.
+A push to `main` that changes code or the installer builds a CI artifact. A release is a
+tag `v<version>` on `main`; propose the tag only after the owner tested the build on the
+ThinkPad. `build.ps1 -Version` sets the version of both the app and the installer.

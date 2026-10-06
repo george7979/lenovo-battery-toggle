@@ -52,13 +52,18 @@ other ThinkPad owners.
   the app, and used only with a valid Lenovo signature.
 
 ### FR5: Install and uninstall
-- A standard Windows installer with a Start menu entry and an entry in Apps.
+- A standard Windows installer with Start menu entries (the toggle and its settings) and
+  an entry in Apps.
+- A fresh install lets the user choose: for the current user only, or for all users.
+- With the app installed, the installer offers only Repair (keeps the settings, also used
+  for updates) or Uninstall (every installation found).
 - The uninstaller switches thresholds off and removes everything the app wrote,
   including folders.
 
 ## Non-functional requirements
 
-- **No administrator rights** for installing, running or uninstalling.
+- **No administrator rights needed:** the default per-user install, running and
+  uninstalling work without them; only the optional all-users install asks for them.
 - **Small and dependency-free:** runs on any Windows 10/11 without installing a runtime.
 - **Offline after installation:** the installer prepares everything the first press needs.
 
@@ -70,7 +75,8 @@ other ThinkPad owners.
 
 ## Acceptance criteria
 
-- Pressing the assigned key toggles thresholds and shows the new state within about 3 s.
+- Pressing the assigned key toggles thresholds and shows the new state within a few
+  seconds.
 - The Vantage threshold switch shows the same state as the app.
 - After uninstall the program folder, the data folder, the Start menu entries and the
   Apps entry are gone, and thresholds are off.
