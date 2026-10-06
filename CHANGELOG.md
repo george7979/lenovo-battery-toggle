@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The settings window shows whether the charge thresholds are on or off right now.
+
 ### Fixed
 
 - Uninstalling an all-users installation from Windows Settings now switches the thresholds

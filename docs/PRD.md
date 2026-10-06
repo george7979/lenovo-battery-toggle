@@ -42,7 +42,7 @@ other ThinkPad owners.
 
 ### FR3: Settings
 - Start and stop values and the notification time are set in a small settings window
-  opened from the Start menu.
+  opened from the Start menu, which also shows whether thresholds are on right now.
   It accepts only valid values, so a typo cannot break the settings; when thresholds are on,
   saving applies the new values right away.
 - The installer asks for the values and keeps the current ones on upgrade.

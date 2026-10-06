@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Msg = LenovoBatteryToggle.Text;
 
@@ -19,6 +20,7 @@ namespace LenovoBatteryToggle
             Minimum = Settings.MinSeconds, Maximum = Settings.MaxSeconds, Width = 70, TextAlign = HorizontalAlignment.Right,
         };
         private readonly Label _hint = new Label { AutoSize = true, ForeColor = SystemColors.GrayText };
+        private readonly Label _state = new Label { AutoSize = true, MaximumSize = new Size(380, 0), Margin = new Padding(3, 0, 3, 12), Text = Msg.StateNow + Msg.StateReading };
         private readonly Button _save = new Button { Text = Msg.Save, AutoSize = true, DialogResult = DialogResult.None };
 
         public SettingsForm(Settings settings)
@@ -54,14 +56,16 @@ namespace LenovoBatteryToggle
             };
             layout.Controls.Add(new Label { Text = Msg.SettingsIntro, AutoSize = true, MaximumSize = new Size(380, 0), Margin = new Padding(3, 3, 3, 12) }, 0, 0);
             layout.SetColumnSpan(layout.GetControlFromPosition(0, 0), 2);
-            layout.Controls.Add(FieldLabel(Msg.StartLabel), 0, 1);
-            layout.Controls.Add(_start, 1, 1);
-            layout.Controls.Add(FieldLabel(Msg.StopLabel), 0, 2);
-            layout.Controls.Add(_stop, 1, 2);
-            layout.Controls.Add(_hint, 0, 3);
+            layout.Controls.Add(_state, 0, 1);
+            layout.SetColumnSpan(_state, 2);
+            layout.Controls.Add(FieldLabel(Msg.StartLabel), 0, 2);
+            layout.Controls.Add(_start, 1, 2);
+            layout.Controls.Add(FieldLabel(Msg.StopLabel), 0, 3);
+            layout.Controls.Add(_stop, 1, 3);
+            layout.Controls.Add(_hint, 0, 4);
             layout.SetColumnSpan(_hint, 2);
-            layout.Controls.Add(FieldLabel(Msg.SecondsLabel), 0, 4);
-            layout.Controls.Add(_seconds, 1, 4);
+            layout.Controls.Add(FieldLabel(Msg.SecondsLabel), 0, 5);
+            layout.Controls.Add(_seconds, 1, 5);
 
             var buttons = new FlowLayoutPanel
             {
@@ -72,11 +76,37 @@ namespace LenovoBatteryToggle
             };
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(_save);
-            layout.Controls.Add(buttons, 0, 5);
+            layout.Controls.Add(buttons, 0, 6);
             layout.SetColumnSpan(buttons, 2);
 
             Controls.Add(layout);
             UpdateState();
+            Shown += async (sender, args) =>
+            {
+                var state = await Task.Run(() => ReadState());
+                // The window may have been closed while the state was being read
+                if (!IsDisposed) _state.Text = Msg.StateNow + state;
+            };
+        }
+
+        /// <summary>
+        /// The state read from the system when the window opens (reading takes a moment, so the
+        /// window shows first). Never downloads anything.
+        /// </summary>
+        private static string ReadState()
+        {
+            try
+            {
+                if (!PowerDriver.IsInstalled()) return Msg.StateUnknown(Msg.DriverMissing);
+                var tool = ChargeThresholdTool.Existing();
+                if (tool == null) return Msg.StateUnknown(Msg.ToolNotYetDownloaded);
+                var state = tool.Status();
+                return state.IsOff ? Msg.TurnedOff : Msg.TurnedOn(state.Start, state.Stop);
+            }
+            catch (Exception ex)
+            {
+                return Msg.StateUnknown(ex.Message);
+            }
         }
 
         private static NumericUpDown NewField() =>

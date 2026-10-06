@@ -172,7 +172,9 @@ Starting the app is the whole interface: every start toggles the thresholds. (Th
 
 ## Configuration
 
-Start menu → **Lenovo Battery Toggle Settings** opens a small window:
+Start menu → **Lenovo Battery Toggle Settings** opens a small window. Its first line shows
+whether the thresholds are on or off right now, read from the system when the window opens.
+Below it:
 
 - **Start charging below** — charging starts when the battery drops below this level,
 - **Stop charging at** — charging stops at this level,
