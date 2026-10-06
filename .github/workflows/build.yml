@@ -1,0 +1,60 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'src/**'
+      - 'installer/**'
+      - 'build.ps1'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Pinned so every release is built by the same compiler as the local test build
+  INNO_VERSION: 7.1.0
+  INNO_TAG: is-7_1_0
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
+          else { $v = "0.0.0-dev.$env:GITHUB_RUN_NUMBER" }
+          "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup (portable)
+        shell: pwsh
+        run: |
+          $setup = "$env:RUNNER_TEMP\innosetup.exe"
+          Invoke-WebRequest "https://github.com/jrsoftware/issrc/releases/download/$env:INNO_TAG/innosetup-$env:INNO_VERSION-x64.exe" -OutFile $setup
+          if ((Get-AuthenticodeSignature $setup).Status -ne 'Valid') { throw 'Inno Setup installer signature is not valid' }
+          Start-Process $setup -ArgumentList '/PORTABLE=1','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$env:RUNNER_TEMP\inno" -Wait
+
+      - name: Build app and installer
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: ./build.ps1 -Version $env:VERSION -Iscc "$env:RUNNER_TEMP\inno\ISCC.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lenovo-battery-toggle-setup
+          path: artifacts/*-setup.exe
+
+      - name: Release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME (Get-Item artifacts/*-setup.exe).FullName --title $env:GITHUB_REF_NAME --generate-notes

@@ -50,6 +50,13 @@ namespace LenovoBatteryToggle
             return new ChargeThresholdTool(path);
         }
 
+        /// <summary>The cached copy, or null when the app never downloaded it.</summary>
+        public static ChargeThresholdTool Existing()
+        {
+            var path = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
+            return File.Exists(path) && Signature.IsSignedByLenovo(path) ? new ChargeThresholdTool(path) : null;
+        }
+
         public ThresholdState Status() => ThresholdState.Parse(Run("status"));
 
         public void TurnOn(int stop, int start) => Run("on", stop.ToString(), start.ToString());

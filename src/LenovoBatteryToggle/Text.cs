@@ -19,6 +19,10 @@ namespace LenovoBatteryToggle
 
         public static string Error => Pick("Błąd: ", "Error: ");
 
+        public static string DriverMissing => Pick(
+            "Brak sterownika Lenovo Power and Battery. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo.",
+            "The Lenovo Power and Battery driver is missing. Run Windows Update or install package DS541411 from Lenovo Support.");
+
         public static string BadSignature => Pick(
             "Pobrany ChargeThreshold.exe nie ma ważnego podpisu Lenovo i został usunięty.",
             "The downloaded ChargeThreshold.exe has no valid Lenovo signature and was deleted.");
