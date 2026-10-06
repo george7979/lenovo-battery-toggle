@@ -140,7 +140,8 @@ namespace LenovoBatteryToggle
         private static int TurnOffQuietly()
         {
             // Leaves the battery at its factory behaviour; never downloads anything. An elevated
-            // (all-users) uninstaller gets only the protected copy next to the app
+            // (all-users) uninstaller gets only the protected copy next to the app, promoted
+            // from the user's copy when setup could not download it
             try
             {
                 var tool = ChargeThresholdTool.Existing();

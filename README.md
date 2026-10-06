@@ -123,7 +123,8 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
    - **Install for me only** — no administrator rights; installs to
      `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle`.
    - **Install for all users** — asks for administrator rights; installs to
-     `C:\Program Files\Lenovo Battery Toggle`.
+     `C:\Program Files (x86)\Lenovo Battery Toggle` (the installer is 32-bit; the app
+     itself runs as a 64-bit process).
 4. On the **Charge thresholds** page choose the values used when the thresholds are on.
 5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
    key press works even offline.
@@ -231,9 +232,7 @@ https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThre
 
 and save it as `%LOCALAPPDATA%\LenovoBatteryToggle\ChargeThreshold.exe`. The app accepts
 it only with a valid Lenovo signature, and the uninstaller removes it like any other file
-of the app. The message window can be copied with Ctrl+C. With an all-users installation,
-also run the installer's **Repair** once the download works again: it puts a copy in the
-program folder, which the uninstaller needs to switch the thresholds off.
+of the app. The message window can be copied with Ctrl+C.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed

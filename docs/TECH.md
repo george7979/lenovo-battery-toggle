@@ -46,16 +46,16 @@ where the Vantage switch reads it from.
 | `--on` | installer finish page | As above, but always `on <stop> <start>` (applies the saved values when already on) |
 | `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool, read the state. No UI, no change. Exit `0` ready with thresholds off, `4` ready with thresholds on, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
 | `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
-| `--install-tool` | all-users setup (elevated) | Download `ChargeThreshold.exe` next to the app (`{app}`), verify it there. Exit `0` OK (also when a valid copy is already there), `1` failed, `3` not obtained |
+| `--install-tool` | all-users setup (elevated) | Download `ChargeThreshold.exe` next to the app (`{app}`) and verify it there, or promote the user's copy when the download fails. Exit `0` OK (also when a valid copy is already there), `1` failed, `3` not obtained |
 | `--off` | uninstaller, setup's Uninstall action | Switch thresholds off if a tool copy and the driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
 
 | Location | Content | Removed by uninstaller |
 |---|---|---|
-| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
+| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files (x86)\Lenovo Battery Toggle\` (all users; `{autopf}` of a 32-bit setup) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` (per-user install, or fallback) | yes, whole folder |
-| `C:\Program Files\Lenovo Battery Toggle\ChargeThreshold.exe` | protected copy (all-users install) | yes |
+| `C:\Program Files (x86)\Lenovo Battery Toggle\ChargeThreshold.exe` | protected copy (all-users install) | yes |
 | Start menu (user or all users) | app shortcut, settings shortcut (`--settings`, gear icon) | yes |
 | `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
 
@@ -97,9 +97,17 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   tool into `{app}`, writable by administrators only, and checks the signature on the file
   in that final place. Tool lookup (`ChargeThresholdTool`): the protected copy next to the
   app if it is there and signed; otherwise, only when not `Elevation.IsElevated`, the user's
-  copy (downloaded if missing). Elevated with no protected copy, `Ensure()` refuses and
-  `Existing()` returns null, so `--off` does nothing. A protected copy that fails the check
-  is ignored, not deleted (an unelevated process may not delete it). The tool imports only
+  copy (downloaded if missing). Elevated with no protected copy (the download failed at
+  setup), the app **promotes** the user's copy: it copies the file into `{app}` and checks
+  the copy there, so the source is never checked or run; reading untrusted bytes is fine,
+  checking and running happen only where unelevated processes cannot write. A promoted copy
+  must pass the Lenovo signature **and** match the SHA-256 of `ChargeThreshold.exe` v1.0.0.2
+  (`PromotableSha256`), because the signature alone would accept any Lenovo-signed program
+  placed in the profile under that name. `--install-tool` promotes the same way when its
+  download fails, which covers Repair after a manual or first-use download. With nothing
+  valid to promote, `Ensure()` refuses and `Existing()` returns null, so `--off` does
+  nothing. A protected copy that fails the check is ignored by unelevated processes (they
+  may not delete it) and replaced by a promotion. The tool imports only
   `KERNEL32` and `RPCRT4` (KnownDLLs). Without UAC (`TokenElevationTypeDefault`) there is no
   boundary and the user's copy is used as before. Setup's Uninstall action also runs
   `--off` through `ExecAsOriginalUser` before an all-users uninstaller, for an install whose
@@ -167,7 +175,10 @@ as 4 s; with 2 s and 4 s the toggle process takes 2.4 s and 4.4 s; replacing the
 tool with a file signed by someone else makes `--prepare` exit `3` and the toggle delete
 the file. `--install-tool` was checked to download and verify the protected copy, to keep a
 valid one on Repair, and `--prepare` to use it without creating a profile copy; a
-protected copy signed by someone else is ignored and the profile copy is used. Not covered
+protected copy signed by someone else is ignored and the profile copy is used. With
+downloads blocked (a dead proxy in the test copy's `.config`), `--install-tool` promotes a
+genuine profile copy and rejects a Microsoft-signed file and the genuine file with one byte
+appended, leaving no temporary file. Not covered
 by the scripts, so checked by hand: the wizard pages (step 4), the all-users uninstall
 (step 5), the settings window (Save disabled when start >= stop, values applied at once
 when thresholds are on), how the notification looks and that it does not take focus, the
@@ -176,8 +187,10 @@ download (silent mode suppresses them, and the test machine has the driver).
 
 ## Known issues
 
-- An all-users install whose `--install-tool` download failed has no protected copy: its
-  uninstaller from Windows Settings leaves the thresholds as they are (setup's Uninstall
-  action still switches them off); Repair with an internet connection fixes it.
+- An all-users install made with over-the-shoulder elevation (a standard user types an
+  administrator's password) whose `--install-tool` download failed: the elevated uninstaller
+  sees the administrator's profile, which holds no copy to promote, so uninstalling from
+  Windows Settings leaves the thresholds as they are. Setup's Uninstall action still switches
+  them off, and Repair with an internet connection adds the protected copy.
 - Vantage shows the switch as "off" regardless of the state when the
   `PWRMGRV\ConfKeys` branch is missing; fix in README → Troubleshooting.
