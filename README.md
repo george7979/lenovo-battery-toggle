@@ -250,7 +250,7 @@ installs the driver again and creates the branch.
 Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.1.1 -Iscc "C:\path\to\ISCC.exe"
+.\build.ps1 -Version 0.1.2 -Iscc "C:\path\to\ISCC.exe"
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:

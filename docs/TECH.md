@@ -139,7 +139,7 @@ URL changes with every version; Windows Update installs the driver reliably.
 Local (Windows, from WSL — see `CLAUDE.md`):
 
 ```powershell
-.\build.ps1 -Version 0.1.1 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
+.\build.ps1 -Version 0.1.2 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
 ```
 
 CI (`.github/workflows/build.yml`): a push to `dev` or `main` that touches `src/`,
