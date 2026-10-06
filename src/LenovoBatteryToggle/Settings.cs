@@ -28,18 +28,23 @@ namespace LenovoBatteryToggle
         public static Settings Load()
         {
             // Write the defaults on first run, so there is a file to edit
-            if (!File.Exists(ConfigPath))
-            {
-                Directory.CreateDirectory(DataDirectory);
-                File.WriteAllText(ConfigPath,
-                    "{\r\n  \"start\": " + DefaultStart + ",\r\n  \"stop\": " + DefaultStop + "\r\n}\r\n",
-                    new UTF8Encoding(false));
-            }
+            if (!File.Exists(ConfigPath)) Save(DefaultStart, DefaultStop);
 
             var settings = Read(ConfigPath);
             if (!(settings.Start >= 0 && settings.Stop <= 100 && settings.Start < settings.Stop))
                 throw new InvalidOperationException(Text.InvalidConfig(ConfigPath, settings.Start, settings.Stop));
             return settings;
+        }
+
+        /// <summary>Writes the values chosen in the installer (validated first).</summary>
+        public static void Save(int start, int stop)
+        {
+            if (!(start >= 0 && stop <= 100 && start < stop))
+                throw new InvalidOperationException(Text.InvalidConfig(ConfigPath, start, stop));
+            Directory.CreateDirectory(DataDirectory);
+            File.WriteAllText(ConfigPath,
+                "{\r\n  \"start\": " + start + ",\r\n  \"stop\": " + stop + "\r\n}\r\n",
+                new UTF8Encoding(false));
         }
 
         private static Settings Read(string path)

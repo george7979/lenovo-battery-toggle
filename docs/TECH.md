@@ -40,17 +40,17 @@ where the Vantage switch reads it from.
 | Command | Used by | Behaviour |
 |---|---|---|
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
-| `--prepare` | installer | Driver check, write default settings, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed (retried on first use), `2` driver missing |
+| `--prepare [start stop]` | installer | Write the wizard values (or defaults), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed (invalid values, or download retried on first use), `2` driver missing |
 | `--off` | uninstaller | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
 
 | Location | Content | Removed by uninstaller |
 |---|---|---|
-| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` | app, `.exe.config`, uninstaller | yes |
+| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, uninstaller | yes |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` | yes, whole folder |
-| Start menu (user) | app shortcut, settings shortcut (Notepad) | yes |
-| `HKCU\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
+| Start menu (user or all users) | app shortcut, settings shortcut (Notepad) | yes |
+| `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
 
 The app writes nothing else: no registry values, no services, no scheduled tasks.
 `config.json` is created with defaults on first run if the installer did not write it.
@@ -71,7 +71,12 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `DataContractJsonSerializer`. SDK-style project; the .NET SDK pulls the net48 reference
   assemblies from NuGet.
 - App manifest: `asInvoker`, PerMonitorV2 DPI awareness.
-- **Inno Setup 7.1.0**, per-user (`PrivilegesRequired=lowest`), English and Polish wizard.
+- **Inno Setup 7.1.0**, English and Polish wizard. `PrivilegesRequired=lowest` with
+  `PrivilegesRequiredOverridesAllowed=dialog`: setup asks *for me* (no elevation) or
+  *all users* (UAC, Program Files). The data folder is always per user; setup runs
+  `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
+  into the signed-in user's profile. The uninstaller removes the data folder of the user
+  who runs it.
   CI and local builds use the same pinned version in portable mode.
 
 Deliberately: .NET Framework 4.8 instead of .NET 8 — a 17 kB executable with no runtime to

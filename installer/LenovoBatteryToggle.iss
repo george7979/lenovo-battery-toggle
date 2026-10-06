@@ -1,5 +1,6 @@
 ﻿; Inno Setup 6 script. Build: ISCC.exe /DAppVersion=0.1.0 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
-; Per-user install, no administrator rights: the app itself never needs elevation either.
+; Setup asks: install for me (no administrator rights, %LOCALAPPDATA%\Programs) or for all
+; users (UAC, Program Files). Settings and the Lenovo tool always live in the user's profile.
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -23,6 +24,9 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+; Settings are per user by design; the data folder belongs to the user who runs setup
+UsedUserAreasWarning=no
 OutputDir=..\artifacts
 OutputBaseFilename=lenovo-battery-toggle-{#AppVersion}-setup
 UninstallDisplayIcon={app}\{#AppExe}
@@ -159,15 +163,12 @@ var
 begin
   if CurStep <> ssPostInstall then Exit;
 
-  ForceDirectories(ExpandConstant('{#DataDir}'));
-  SaveStringToFile(ConfigPath,
-    '{' + #13#10 +
-    '  "start": ' + Trim(ThresholdPage.Values[0]) + ',' + #13#10 +
-    '  "stop": ' + Trim(ThresholdPage.Values[1]) + #13#10 +
-    '}' + #13#10, False);
-
-  { Check the driver and download the Lenovo tool now, so the first key press works offline }
-  if Exec(ExpandConstant('{app}\{#AppExe}'), '--prepare', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  { The app writes the settings, checks the driver and downloads the Lenovo tool, so the first
+    key press works offline. It runs as the signed-in user: with an all-users install setup is
+    elevated, and the settings must still land in that user's profile. }
+  if ExecAsOriginalUser(ExpandConstant('{app}\{#AppExe}'),
+    '--prepare ' + Trim(ThresholdPage.Values[0]) + ' ' + Trim(ThresholdPage.Values[1]),
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     if ResultCode = 2 then
       SuppressibleMsgBox(Msg('DriverMissing'), mbError, MB_OK, IDOK)

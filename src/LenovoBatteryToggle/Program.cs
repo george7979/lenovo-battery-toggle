@@ -13,14 +13,15 @@ namespace LenovoBatteryToggle
 
         /// <summary>
         /// No arguments: toggle thresholds and show the result.
-        /// --prepare: check the driver, write default settings, download the Lenovo tool; no UI, no toggle.
+        /// --prepare [start stop]: check the driver, write the given (or default) settings,
+        ///   download the Lenovo tool; no UI, no toggle.
         /// --off: switch thresholds off silently (used by the uninstaller).
         /// </summary>
         [STAThread]
         private static int Main(string[] args)
         {
             var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
-            if (mode == "--prepare") return Prepare();
+            if (mode == "--prepare") return Prepare(args);
             if (mode == "--off") return TurnOffQuietly();
 
             Application.EnableVisualStyles();
@@ -59,8 +60,19 @@ namespace LenovoBatteryToggle
             return Text.TurnedOn(after.Start, after.Stop);
         }
 
-        private static int Prepare()
+        private static int Prepare(string[] args)
         {
+            // The installer passes the wizard values; it runs this as the signed-in user, so the
+            // settings land in that user's profile even when setup itself is elevated
+            try
+            {
+                if (args.Length >= 3) Settings.Save(int.Parse(args[1]), int.Parse(args[2]));
+            }
+            catch (Exception)
+            {
+                return Failed;
+            }
+
             if (!PowerDriver.IsInstalled()) return DriverMissing;
             try
             {

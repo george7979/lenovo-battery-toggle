@@ -1,58 +1,139 @@
 # Lenovo Battery Toggle
 
-Turn ThinkPad battery charge thresholds on or off with a single key press.
+**Turn ThinkPad battery charge thresholds on or off with a single key press.**
 
-Charge thresholds keep a ThinkPad that lives on the charger between, say, 75% and 80%,
-which slows battery wear. Before a trip you want the opposite: a full battery, right now.
-Lenovo Vantage can switch the thresholds, but it takes several clicks every time.
-This app does it in one step, and it fits the user-defined key that many ThinkPads have
-on **F12**.
+A tiny Windows app for ThinkPads. Run it once and the charge thresholds go off, so the
+battery charges to 100%. Run it again and they come back. Assign it to the F12 key and
+you have a dedicated battery-mode switch.
 
-Press the key and a short message appears in the corner of the screen:
+---
 
-> Charge thresholds OFF: the battery charges to 100%.
+## Why this exists
 
-Press it again:
+ThinkPads can limit charging with **charge thresholds**: for example, start charging
+below 75% and stop at 80%. A laptop that spends most of its life on the charger wears its
+battery much more slowly that way, so many owners keep the thresholds on all the time.
 
-> Charge thresholds ON: charging starts below 75%, stops at 80%.
+Every now and then you need the opposite: a full battery, soon. Before a trip, a long
+meeting or a day away from the desk, the thresholds have to go away for a while, and
+afterwards they should come back.
 
-The message closes by itself after two seconds. There is nothing to click.
+Lenovo Vantage can do this, but it takes several clicks in each direction, and it is easy
+to forget to switch the thresholds back on. Many ThinkPads, however, have a
+**user-defined key (F12)** that can launch any program. This app is the program for that
+key: one press switches the mode and tells you which mode you are in now.
+
+## What it does
+
+- **Toggles** charge thresholds: off when they are on, on when they are off.
+- **Uses your values** when switching on (default: start below 75%, stop at 80%).
+- **Shows the result** for two seconds in the corner of the screen and disappears by
+  itself. No buttons, no window to close, and it does not steal focus from your work:
+
+  > Charge thresholds OFF: the battery charges to 100%.
+  >
+  > Charge thresholds ON: charging starts below 75%, stops at 80%.
+
+- **Reports the real state.** The message is based on reading the setting back from the
+  system after the change, not on what the app intended to do.
+- **Speaks Polish or English**, following the Windows display language.
+- **Cleans up after itself.** Uninstalling switches the thresholds off and removes every
+  file the app created.
+
+## What it does not do
+
+- **It does not run in the background.** No tray icon, no service, no scheduled task. It
+  starts, switches, shows the message and exits (about 3 seconds in total).
+- **It does not change thresholds on a schedule** or by battery level. It switches only
+  when you run it.
+- **It does not replace Lenovo Vantage.** Vantage is not needed, but if you have it, both
+  work side by side and the switch in Vantage shows the state set by this app.
+- **It does not install drivers** and does not modify the system. It relies on the Lenovo
+  driver that Windows Update installs on ThinkPads.
+- **It does not include any Lenovo software.** The one Lenovo tool it uses is downloaded
+  from Lenovo, see below.
+- **It does not collect or send any data.** The only network access is the one-time
+  download of the Lenovo tool from `download.lenovo.com`.
+- **It does not work on non-Lenovo laptops** or on Lenovo models without charge-threshold
+  support in firmware.
+
+## How it works
+
+The app does not talk to the battery itself. It uses Lenovo's own building blocks, the
+same ones Lenovo Vantage uses:
+
+```
+ your key press
+      │
+      ▼
+ lenovo-battery-toggle.exe          this app: decides on/off, shows the message
+      │  runs
+      ▼
+ ChargeThreshold.exe                Lenovo's official command-line tool
+      │  asks
+      ▼
+ Lenovo Power and Battery driver    installed by Windows Update on ThinkPads
+      │  sets
+      ▼
+ battery controller (firmware)      keeps the thresholds, even when Windows is off
+```
+
+### About ChargeThreshold.exe
+
+`ChargeThreshold.exe` is a small command-line tool published by Lenovo for setting charge
+thresholds from scripts, without Vantage
+([Lenovo knowledge base article](https://forums.lenovo.com/t5/Lenovo-Vantage-Knowledge-Base/Q-amp-A-setting-a-ThinkPad-battery-charge-threshold-by-script/ta-p/4345631)).
+It belongs to Lenovo, so this project does not redistribute it. Instead:
+
+- the app **downloads it from Lenovo** (`download.lenovo.com`) once, during installation,
+- it **checks the digital signature** and uses the file only if it is validly signed by
+  Lenovo; otherwise the file is deleted,
+- it keeps the file in the app's data folder and runs it in the background, without a
+  console window.
+
+The app calls it with three commands: `status` (read the current state), `on <stop> <start>`
+and `off`.
 
 ## Requirements
 
-- A **ThinkPad** with Windows 10 or 11.
+- A **ThinkPad** with **Windows 10 or 11**.
 - The **Lenovo Power and Battery** driver. Windows Update installs it automatically on
   ThinkPads; it is also available from Lenovo Support as package
-  [DS541411](https://support.lenovo.com/downloads/ds541411). The installer checks for it.
-- **Lenovo Vantage is not required.** If you have it, both work side by side and the
-  threshold switch in Vantage shows the state set by this app.
+  [DS541411](https://support.lenovo.com/downloads/ds541411). The installer checks for it
+  and tells you if it is missing.
+- **Internet access during installation**, for the download of `ChargeThreshold.exe`.
 
-No administrator rights are needed, neither to install nor to run the app.
+Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 and 11.
 
-## Install
+## Installation
 
 1. Download `lenovo-battery-toggle-<version>-setup.exe` from the
    [latest release](https://github.com/george7979/lenovo-battery-toggle/releases/latest).
 2. Run it. The installer is not code-signed, so Windows SmartScreen may show
-   "Windows protected your PC" on the first run: choose **More info → Run anyway**.
-   On the **Charge thresholds** page choose the values used when thresholds are on
-   (default: start below 75%, stop at 80%).
-3. At the end the installer downloads Lenovo's `ChargeThreshold.exe` and checks its
-   digital signature, so the first key press works offline.
+   "Windows protected your PC": choose **More info → Run anyway**.
+3. Choose the install mode:
+   - **Install for me only** — no administrator rights; installs to
+     `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle`.
+   - **Install for all users** — asks for administrator rights; installs to
+     `C:\Program Files\Lenovo Battery Toggle`.
+4. On the **Charge thresholds** page choose the values used when the thresholds are on.
+5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
+   key press works even offline.
 
-## Assign the F12 key
+## Usage
 
-1. Open **Lenovo Vantage** and find the **user-defined key** setting (F12 on many ThinkPads;
-   the exact menu name depends on the Vantage version).
-2. Choose the action that opens an application or file and select:
+Running the app is the whole interface. Any way of starting it toggles the thresholds:
 
-   ```
-   %LOCALAPPDATA%\Programs\Lenovo Battery Toggle\lenovo-battery-toggle.exe
-   ```
+- **Start menu** → *Lenovo Battery Toggle*.
+- **The F12 user-defined key.** In Lenovo Vantage, open the setting of the user-defined key
+  (the menu name depends on the Vantage version), choose the action that opens an
+  application or file, and paste the full path of `lenovo-battery-toggle.exe`
+  (`AppData` is a hidden folder, so pasting is easier than browsing).
+- **A Windows keyboard shortcut**, without Vantage. Right-click the Start menu entry →
+  *Open file location* → *Properties* of the shortcut → **Shortcut key**, for example
+  `Ctrl+Alt+B`.
 
-The app also has a Start menu entry, so any launcher or keyboard tool can start it.
-
-## Change the thresholds
+## Configuration
 
 Start menu → **Charge threshold settings** opens the settings file in Notepad:
 
@@ -63,48 +144,68 @@ Start menu → **Charge threshold settings** opens the settings file in Notepad:
 }
 ```
 
-`start` is the level below which charging starts, `stop` the level at which it stops.
-Rules: whole numbers, `0 <= start < stop <= 100`. The new values apply the next time the
-toggle switches thresholds on. Running the installer again also shows the current values
-and lets you change them.
+- `start` — charging starts when the battery drops below this level,
+- `stop` — charging stops at this level,
+- whole numbers, `0 <= start < stop <= 100`.
+
+New values apply the next time the app switches the thresholds on. Running the installer
+again also shows the current values and lets you change them.
+
+## Files on your computer
+
+| Location | Content |
+|---|---|
+| Program folder (see Installation) | `lenovo-battery-toggle.exe` and the uninstaller |
+| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
+| Start menu | *Lenovo Battery Toggle* and *Charge threshold settings* |
+
+The app writes nothing else: no registry settings, no services, no scheduled tasks, no logs.
+The Lenovo driver itself records the threshold state in its own registry key, exactly as it
+does when you use Vantage.
 
 ## Uninstall
 
 Windows Settings → Apps → **Lenovo Battery Toggle** → Uninstall. The uninstaller:
 
-- switches the charge thresholds **off**, so the battery returns to its factory behaviour,
-- removes the program folder, the settings, the downloaded Lenovo tool and the Start menu
-  entries.
+1. switches the charge thresholds **off**, so the battery returns to its factory behaviour,
+2. deletes the program folder, the whole `%LOCALAPPDATA%\LenovoBatteryToggle` folder and
+   the Start menu entries.
 
-Nothing is left behind: the app writes only to two folders, and both are deleted.
-
-## How it works
-
-The app is a small Windows program (about 20 kB, .NET Framework 4.8, which is part of
-Windows). It runs Lenovo's official command-line tool
-[`ChargeThreshold.exe`](https://forums.lenovo.com/t5/Lenovo-Vantage-Knowledge-Base/Q-amp-A-setting-a-ThinkPad-battery-charge-threshold-by-script/ta-p/4345631),
-which sends the setting to the Lenovo Power and Battery driver, the same component
-Lenovo Vantage uses. The tool belongs to Lenovo, so this project does not redistribute it:
-the app downloads it from `download.lenovo.com` and accepts it only with a valid
-Lenovo signature. Technical details: [docs/TECH.md](docs/TECH.md).
+With an all-users installation, settings are per user: the uninstaller removes the data
+folder of the user who runs it.
 
 ## Troubleshooting
 
 **"The Lenovo Power and Battery driver is missing"** — run Windows Update, or install
 package DS541411 from Lenovo Support.
 
-**The threshold switch in Lenovo Vantage always shows "off", although the thresholds
-work.** Vantage reads the state from a registry branch that the driver creates only on
-its first installation. If that branch was deleted (for example after moving a disk to
-another ThinkPad), reinstall the driver from scratch: in an administrator terminal run
+**"Could not download ChargeThreshold.exe"** — the app retries on the next run; check the
+internet connection or a firewall blocking `download.lenovo.com`.
+
+**The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
+reads the state from a registry branch that the driver creates only when it is installed
+for the first time. If that branch is gone (for example after moving a disk to another
+ThinkPad), reinstall the driver from scratch: in an administrator terminal run
 `pnputil /remove-device` for the *Lenovo Power and Battery* device and
-`pnputil /delete-driver` for its `powermgr.inf` package, then restart; Windows Update
-installs it again and creates the branch.
+`pnputil /delete-driver` for its `powermgr.inf` package, then restart. Windows Update
+installs the driver again and creates the branch.
+
+## Building from source
+
+Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
+
+```powershell
+.\build.ps1 -Version 0.1.0 -Iscc "C:\path\to\ISCC.exe"
+```
+
+The installer is written to `artifacts\`. Architecture and test procedure:
+[docs/TECH.md](docs/TECH.md). Every push to `main` is built by GitHub Actions; tags `v*`
+publish a release.
 
 ## Disclaimer
 
-Not affiliated with or endorsed by Lenovo. Lenovo, ThinkPad and Vantage are trademarks
-of Lenovo. Use at your own risk.
+This is an independent project, not affiliated with or endorsed by Lenovo. Lenovo,
+ThinkPad and Vantage are trademarks of Lenovo. Use at your own risk.
 
 ## License
 
