@@ -1,3 +1,7 @@
-# Plik Lenovo pobiera install.ps1; nie trzymamy cudzych binariów w repo
+# Lenovo binary: the app downloads it at runtime, releases never bundle it
 *.exe
+
+# Build output and scratch files
+bin/
+obj/
 .work/
