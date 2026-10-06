@@ -93,11 +93,10 @@ It belongs to Lenovo, so this project does not redistribute it. Instead:
   (or on first use, if the download during installation failed),
 - it **checks the digital signature** and uses the file only if it is validly signed by
   Lenovo; otherwise the file is deleted,
-- with an all-users installation it keeps the file in the program folder, which only
-  administrators can change, so the uninstaller (which runs with administrator rights)
-  can use it safely; the app never runs a copy from your profile with administrator rights,
-- it keeps the file in the app's data folder and runs it in the background, without a
-  console window.
+- it keeps the file in the app's data folder, or, with an all-users installation, in the
+  program folder, which only administrators can change: the uninstaller runs with
+  administrator rights and may use only that copy, never one from your profile,
+- it runs the file in the background, without a console window.
 
 The app calls it with three commands: `status` (read the current state), `on <stop> <start>`
 and `off`.
@@ -181,7 +180,7 @@ is brought into that range.
 
 | Location | Content |
 |---|---|
-| Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon and the uninstaller |
+| Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon, the uninstaller and, for an all-users installation, `ChargeThreshold.exe` |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and, for a per-user installation, `ChargeThreshold.exe` (downloaded from Lenovo) |
 | Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 
@@ -220,7 +219,9 @@ https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThre
 
 and save it as `%LOCALAPPDATA%\LenovoBatteryToggle\ChargeThreshold.exe`. The app accepts
 it only with a valid Lenovo signature, and the uninstaller removes it like any other file
-of the app. The message window can be copied with Ctrl+C.
+of the app. The message window can be copied with Ctrl+C. With an all-users installation,
+also run the installer's **Repair** once the download works again: it puts a copy in the
+program folder, which the uninstaller needs to switch the thresholds off.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed
@@ -236,7 +237,7 @@ installs the driver again and creates the branch.
 Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.1.0 -Iscc "C:\path\to\ISCC.exe"
+.\build.ps1 -Version 0.1.1 -Iscc "C:\path\to\ISCC.exe"
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:

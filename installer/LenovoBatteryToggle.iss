@@ -1,4 +1,4 @@
-﻿; Inno Setup 6 script. Build: ISCC.exe /DAppVersion=0.1.0 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
+﻿; Inno Setup 7 script. Build: ISCC.exe /DAppVersion=0.1.1 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
 ; Setup asks: install for me (no administrator rights, %LOCALAPPDATA%\Programs) or for all
 ; users (UAC, Program Files). Settings and the Lenovo tool always live in the user's profile.
 
