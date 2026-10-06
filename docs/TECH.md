@@ -103,6 +103,11 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
    `SetChargeThreshold start=[0], stop=[0]`.
 4. Interactive install: threshold page validation, finish page hint, upgrade keeps values.
 
+Steps 1–3 are scripted and pass. Not covered by them, so checked by hand: the wizard
+pages (step 4), how the notification looks and that it does not take focus, the F12
+assignment in Vantage, and the installer messages for a missing driver or a failed
+download (silent mode suppresses them, and the test machine has the driver).
+
 ## Known issues
 
 - Vantage shows the switch as "off" regardless of the state when the

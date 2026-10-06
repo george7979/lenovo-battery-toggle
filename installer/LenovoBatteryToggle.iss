@@ -73,11 +73,19 @@ Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterm
 [UninstallDelete]
 ; Everything the app ever wrote: config.json, the downloaded ChargeThreshold.exe, any subfolder
 Type: filesandordirs; Name: "{#DataDir}"
-Type: filesandordirs; Name: "{app}"
+; {app} is not listed: Inno removes its own files and the empty folder, and a
+; filesandordirs entry would wipe a pre-existing folder chosen as the install directory
 
 [Code]
 var
   ThresholdPage: TInputQueryWizardPage;
+
+{ CustomMessage leaves %n as text; turn it into a line break }
+function Msg(const Name: String): String;
+begin
+  Result := CustomMessage(Name);
+  StringChangeEx(Result, '%n', #13#10, True);
+end;
 
 function ConfigPath: String;
 begin
@@ -162,9 +170,9 @@ begin
   if Exec(ExpandConstant('{app}\{#AppExe}'), '--prepare', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
   begin
     if ResultCode = 2 then
-      SuppressibleMsgBox(CustomMessage('DriverMissing'), mbError, MB_OK, IDOK)
+      SuppressibleMsgBox(Msg('DriverMissing'), mbError, MB_OK, IDOK)
     else if ResultCode <> 0 then
-      SuppressibleMsgBox(CustomMessage('PrepareFailed'), mbInformation, MB_OK, IDOK);
+      SuppressibleMsgBox(Msg('PrepareFailed'), mbInformation, MB_OK, IDOK);
   end;
 end;
 
@@ -172,5 +180,5 @@ procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = wpFinished then
     WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 +
-      ExpandConstant(CustomMessage('FinishedHint'));
+      ExpandConstant(Msg('FinishedHint'));
 end;

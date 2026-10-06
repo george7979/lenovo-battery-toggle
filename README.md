@@ -33,7 +33,9 @@ No administrator rights are needed, neither to install nor to run the app.
 
 1. Download `lenovo-battery-toggle-<version>-setup.exe` from the
    [latest release](https://github.com/george7979/lenovo-battery-toggle/releases/latest).
-2. Run it. On the **Charge thresholds** page choose the values used when thresholds are on
+2. Run it. The installer is not code-signed, so Windows SmartScreen may show
+   "Windows protected your PC" on the first run: choose **More info → Run anyway**.
+   On the **Charge thresholds** page choose the values used when thresholds are on
    (default: start below 75%, stop at 80%).
 3. At the end the installer downloads Lenovo's `ChargeThreshold.exe` and checks its
    digital signature, so the first key press works offline.
