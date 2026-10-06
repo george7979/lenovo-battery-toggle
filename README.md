@@ -30,7 +30,7 @@ key: one press switches the mode and tells you which mode you are in now.
 - **Toggles** charge thresholds: off when they are on, on when they are off.
 - **Uses your values** when switching on (default: start below 75%, stop at 80%), set in
   a small settings window.
-- **Shows the result** for two seconds in the corner of the screen and disappears by
+- **Shows the result** for four seconds in the corner of the screen and disappears by
   itself. No buttons, no window to close, and it does not steal focus from your work:
 
   > Charge thresholds OFF: the battery charges to 100%.
@@ -46,7 +46,7 @@ key: one press switches the mode and tells you which mode you are in now.
 ## What it does not do
 
 - **It does not run in the background.** No tray icon, no service, no scheduled task. It
-  starts, switches, shows the message and exits (about 3 seconds in total). The only window
+  starts, switches, shows the message and exits (about 5 seconds in total). The only window
   is the optional settings window.
 - **It does not change thresholds on a schedule** or by battery level. It switches only
   when you run it.

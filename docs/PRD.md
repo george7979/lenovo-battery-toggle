@@ -34,7 +34,7 @@ other ThinkPad owners.
 ### FR2: Feedback
 - After the change the app shows the state it read back from the system, not the one it
   intended to set.
-- The message closes by itself (2 s; errors 6 s), needs no click and does not take focus
+- The message closes by itself (4 s; errors 6 s), needs no click and does not take focus
   from the active window.
 - Messages are in Polish on a Polish Windows and in English everywhere else.
 

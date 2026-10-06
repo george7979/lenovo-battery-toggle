@@ -31,7 +31,7 @@ namespace LenovoBatteryToggle
                 Padding = new Padding(18, 14, 18, 14),
             });
 
-            var timer = new Timer { Interval = isError ? 6000 : 2000 };
+            var timer = new Timer { Interval = isError ? 6000 : 4000 };
             timer.Tick += (sender, args) => { timer.Stop(); Close(); };
             Load += (sender, args) =>
             {
