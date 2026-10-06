@@ -2,8 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
     tags: ['v*']
+    # Not evaluated for tag pushes: a release tag always builds
     paths:
       - 'src/**'
       - 'installer/**'
@@ -23,7 +24,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Version
         id: version
@@ -47,7 +48,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
         run: ./build.ps1 -Version $env:VERSION -Iscc "$env:RUNNER_TEMP\inno\ISCC.exe"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: lenovo-battery-toggle-setup
           path: artifacts/*-setup.exe
@@ -57,4 +58,19 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create $env:GITHUB_REF_NAME (Get-Item artifacts/*-setup.exe).FullName --title $env:GITHUB_REF_NAME --generate-notes
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          # Release notes = the CHANGELOG.md section of this version, plus the installer checksum
+          $lines = Get-Content CHANGELOG.md
+          $header = $lines | Select-String -Pattern "^## \[$([regex]::Escape($env:VERSION))\]" | Select-Object -First 1
+          if (-not $header) { throw "CHANGELOG.md has no section for $env:VERSION" }
+          $notes = @()
+          foreach ($line in $lines[$header.LineNumber..($lines.Count - 1)]) {
+            if ($line -match '^## \[') { break }
+            $notes += $line
+          }
+          $setup = Get-Item artifacts/*-setup.exe
+          $hash = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
+          $notes += '', '### Download', '', "``$($setup.Name)`` - SHA-256: ``$hash``"
+          $notes -join "`n" | Set-Content -Encoding utf8 release-notes.md
+          gh release create $env:GITHUB_REF_NAME $setup.FullName --title "Lenovo Battery Toggle $env:GITHUB_REF_NAME" --notes-file release-notes.md

@@ -108,9 +108,12 @@ Local (Windows, from WSL — see `CLAUDE.md`):
 .\build.ps1 -Version 0.1.0 -Iscc <path>\ISCC.exe -Dotnet <path>\dotnet.exe
 ```
 
-CI: a push to `main` that touches `src/`, `installer/`, `build.ps1` or the workflow (or a
-manual run) builds an artifact `0.0.0-dev.<run>`; tag `v<version>` builds and publishes a
-GitHub release with `lenovo-battery-toggle-<version>-setup.exe`.
+CI (`.github/workflows/build.yml`): a push to `dev` or `main` that touches `src/`,
+`installer/`, `build.ps1` or the workflow (or a manual run) builds an artifact
+`0.0.0-dev.<run>`. A tag `v<version>` always builds and publishes a GitHub release with
+`lenovo-battery-toggle-<version>-setup.exe`; the release notes are the `## [<version>]`
+section of `CHANGELOG.md` plus the installer's SHA-256 (the job fails if the section is
+missing).
 
 Icons: `uv run --with pillow python assets/make_icon.py` regenerates both `.ico` files and
 `assets/icon-256.png`.

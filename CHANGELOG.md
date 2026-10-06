@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
+[Semantic Versioning](https://semver.org/).
+
+## [0.1.0] - 2026-10-06
+
+First release.
+
+### Added
+
+- **One-key toggle** for ThinkPad battery charge thresholds: every start of
+  `lenovo-battery-toggle.exe` switches the thresholds off when they are on and on when they
+  are off, using Lenovo's official `ChargeThreshold.exe` and the Lenovo Power and Battery
+  driver (Lenovo Vantage is not required).
+- **Notification** in the corner of the screen with the state read back from the system;
+  it closes by itself, does not take focus and needs no click. Polish or English, following
+  the Windows display language.
+- **Settings window** (Start menu → *Lenovo Battery Toggle Settings*): start and stop
+  thresholds, and how long the notification stays on screen (2–10 s). It accepts only valid
+  values; when thresholds are on, saving applies the new values at once.
+- **Installer** (Inno Setup, Polish and English):
+  - install for the current user only (no administrator rights) or for all users,
+  - threshold page, prefilled with the current values on repair,
+  - checks the Lenovo Power and Battery driver and downloads `ChargeThreshold.exe` from
+    Lenovo, accepting it only with a valid Lenovo signature; if the download fails, it shows
+    where to get the file and where to save it,
+  - with the app installed it offers **Repair** (keeps settings, also used for updates) or
+    **Uninstall** (removes every installation found).
+- **Uninstaller** switches the thresholds off and removes the program, the settings, the
+  downloaded Lenovo tool and the Start menu entries.
+- App and settings icons.

@@ -229,8 +229,9 @@ Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:
-[docs/TECH.md](docs/TECH.md). GitHub Actions builds every push to `main` that changes the
-code or the installer; tags `v*` publish a release.
+[docs/TECH.md](docs/TECH.md). Development happens on `dev`; releases are merged to `main`
+and tagged `v<version>`, and GitHub Actions then publishes the installer as a release.
+Changes between versions: [CHANGELOG.md](CHANGELOG.md).
 
 ## Disclaimer
 
