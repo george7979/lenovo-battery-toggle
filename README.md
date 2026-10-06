@@ -1,3 +1,5 @@
+<img src="assets/icon-256.png" alt="" width="96" align="right">
+
 # Lenovo Battery Toggle
 
 **Turn ThinkPad battery charge thresholds on or off with a single key press.**
@@ -119,6 +121,14 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
 4. On the **Charge thresholds** page choose the values used when the thresholds are on.
 5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
    key press works even offline.
+
+Running the installer when the app is already installed offers three choices:
+
+- **Repair** — restores the program files and shortcuts and keeps your settings; this is
+  also how you update to a newer version,
+- **Reinstall** — removes the app with its settings, then installs it from scratch
+  (including the choice of install mode),
+- **Remove** — runs the uninstaller.
 
 ## Usage
 

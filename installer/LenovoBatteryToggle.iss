@@ -35,6 +35,7 @@ WizardStyle=modern
 Compression=lzma2
 SolidCompression=yes
 MinVersion=10.0
+SetupIconFile=..\src\LenovoBatteryToggle\app.ico
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
@@ -59,6 +60,20 @@ en.DriverMissing=The Lenovo Power and Battery driver was not found.%n%nThe app n
 pl.DriverMissing=Nie znaleziono sterownika Lenovo Power and Battery.%n%nAplikacja potrzebuje go do zmiany progów ładowania. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo, a potem użyj aplikacji.
 en.PrepareFailed=Could not download ChargeThreshold.exe from Lenovo now. The app will try again on first use.
 pl.PrepareFailed=Nie udało się teraz pobrać ChargeThreshold.exe od Lenovo. Aplikacja spróbuje ponownie przy pierwszym użyciu.
+en.MaintenanceCaption=Lenovo Battery Toggle is already installed
+pl.MaintenanceCaption=Lenovo Battery Toggle jest już zainstalowany
+en.MaintenanceDescription=Choose what you want to do.
+pl.MaintenanceDescription=Wybierz, co chcesz zrobić.
+en.MaintenancePrompt=Repair keeps your threshold settings and also updates the program to this version. Reinstall and Remove switch the charge thresholds off and delete the settings.
+pl.MaintenancePrompt=Naprawa zachowuje ustawienia progów i aktualizuje program do tej wersji. Ponowna instalacja i usunięcie wyłączają progi ładowania i kasują ustawienia.
+en.ActionRepair=Repair: restore the program files and shortcuts
+pl.ActionRepair=Napraw: przywróć pliki programu i skróty
+en.ActionReinstall=Reinstall: remove the program, then install it from scratch
+pl.ActionReinstall=Zainstaluj ponownie: usuń program i zainstaluj go od nowa
+en.ActionRemove=Remove: uninstall the program and delete all its files
+pl.ActionRemove=Usuń: odinstaluj program i skasuj wszystkie jego pliki
+en.UninstallTimeout=The previous installation could not be removed. Remove it from Windows Settings, Apps, and run setup again.
+pl.UninstallTimeout=Nie udało się usunąć poprzedniej instalacji. Usuń ją w Ustawieniach Windows (Aplikacje) i uruchom instalator ponownie.
 en.FinishedHint=To toggle thresholds with one key, open Lenovo Vantage, find the user-defined key (F12 on many ThinkPads) and set it to open:%n%n{app}\{#AppExe}
 pl.FinishedHint=Aby przełączać progi jednym klawiszem, otwórz Lenovo Vantage, znajdź klawisz definiowany przez użytkownika (F12 w wielu ThinkPadach) i ustaw w nim otwieranie pliku:%n%n{app}\{#AppExe}
 
@@ -81,14 +96,63 @@ Type: filesandordirs; Name: "{#DataDir}"
 ; filesandordirs entry would wipe a pre-existing folder chosen as the install directory
 
 [Code]
+const
+  { Inno appends _is1 to AppId; HKA is HKCU for a per-user install and HKLM for all users }
+  UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6C1E8F4A-2B7D-4E59-9A3C-5D0F1B8E7A24}_is1';
+  ActionRepair = 0;
+  ActionReinstall = 1;
+  ActionRemove = 2;
+
 var
   ThresholdPage: TInputQueryWizardPage;
+  MaintenancePage: TInputOptionWizardPage;
+  IsInstalled: Boolean;
+  Leaving: Boolean;
 
 { CustomMessage leaves %n as text; turn it into a line break }
 function Msg(const Name: String): String;
 begin
   Result := CustomMessage(Name);
   StringChangeEx(Result, '%n', #13#10, True);
+end;
+
+{ The uninstaller of the existing installation, or '' when there is none }
+function ExistingUninstaller: String;
+var
+  Value: String;
+begin
+  Result := '';
+  if RegQueryStringValue(HKA, UninstallKey, 'UninstallString', Value) then
+    Result := RemoveQuotes(Value);
+end;
+
+{ Closes the wizard without the "Exit Setup?" question }
+procedure Leave;
+begin
+  Leaving := True;
+  WizardForm.Close;
+end;
+
+procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);
+begin
+  if Leaving then Confirm := False;
+end;
+
+{ Runs the existing uninstaller silently and waits until it is gone. The uninstaller copies
+  itself to a temporary file and returns at once, so waiting for the process is not enough:
+  wait for its Apps entry to disappear. }
+function UninstallSilently: Boolean;
+var
+  ResultCode, Waited: Integer;
+begin
+  Exec(ExistingUninstaller, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Waited := 0;
+  while RegKeyExists(HKA, UninstallKey) and (Waited < 60000) do
+  begin
+    Sleep(250);
+    Waited := Waited + 250;
+  end;
+  Result := not RegKeyExists(HKA, UninstallKey);
 end;
 
 function ConfigPath: String;
@@ -131,6 +195,15 @@ begin
     Stop := ReadConfigValue(Json, 'stop', Stop);
   end;
 
+  IsInstalled := ExistingUninstaller <> '';
+  MaintenancePage := CreateInputOptionPage(wpWelcome,
+    CustomMessage('MaintenanceCaption'), CustomMessage('MaintenanceDescription'),
+    CustomMessage('MaintenancePrompt'), True, False);
+  MaintenancePage.Add(CustomMessage('ActionRepair'));
+  MaintenancePage.Add(CustomMessage('ActionReinstall'));
+  MaintenancePage.Add(CustomMessage('ActionRemove'));
+  MaintenancePage.SelectedValueIndex := ActionRepair;
+
   ThresholdPage := CreateInputQueryPage(wpSelectDir,
     CustomMessage('ThresholdsCaption'), CustomMessage('ThresholdsDescription'),
     CustomMessage('ThresholdsPrompt'));
@@ -140,12 +213,42 @@ begin
   ThresholdPage.Values[1] := IntToStr(Stop);
 end;
 
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (PageID = MaintenancePage.ID) and not IsInstalled;
+end;
+
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
-  Start, Stop: Integer;
+  Start, Stop, ResultCode: Integer;
 begin
   Result := True;
-  if CurPageID = ThresholdPage.ID then
+  if CurPageID = MaintenancePage.ID then
+  begin
+    case MaintenancePage.SelectedValueIndex of
+      ActionReinstall:
+        begin
+          Result := False;
+          if UninstallSilently then
+          begin
+            { A fresh setup sees no installation, so it asks for the install mode again.
+              It runs as the signed-in user even when this setup is elevated. }
+            ExecAsOriginalUser(ExpandConstant('{srcexe}'), '/LANG=' + ActiveLanguage, '',
+              SW_SHOW, ewNoWait, ResultCode);
+            Leave;
+          end
+          else
+            MsgBox(CustomMessage('UninstallTimeout'), mbError, MB_OK);
+        end;
+      ActionRemove:
+        begin
+          Result := False;
+          Exec(ExistingUninstaller, '', '', SW_SHOW, ewNoWait, ResultCode);
+          Leave;
+        end;
+    end;
+  end
+  else if CurPageID = ThresholdPage.ID then
   begin
     Start := StrToIntDef(Trim(ThresholdPage.Values[0]), -1);
     Stop := StrToIntDef(Trim(ThresholdPage.Values[1]), -1);

@@ -32,6 +32,7 @@ where the Vantage switch reads it from.
 | `Notification.cs` | Borderless, non-activating, timer-closed message |
 | `Text.cs` | Polish/English messages by `CurrentUICulture` |
 | `installer/LenovoBatteryToggle.iss` | Inno Setup 7 script |
+| `assets/make_icon.py` | Draws `app.ico` (9 sizes, larger battery below 32 px) and `assets/icon-256.png` |
 | `build.ps1` | `dotnet build` + `ISCC`, shared by local builds and CI |
 | `.github/workflows/build.yml` | CI build; tag `v*` publishes a release |
 
@@ -77,6 +78,14 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
   into the signed-in user's profile. The uninstaller removes the data folder of the user
   who runs it.
+- **Maintenance page** (custom `[Code]`): when the Apps entry
+  `HKA\...\Uninstall\{AppId}_is1` exists, setup offers Repair / Reinstall / Remove. Inno
+  reuses the previous install mode (`UsePreviousPrivileges`), so the mode dialog appears
+  only on a fresh install. Repair is a normal install over the existing one (threshold page
+  prefilled from `config.json`). Reinstall runs the uninstaller silently, waits for the Apps
+  entry to disappear (the uninstaller copies itself to a temp file and returns at once),
+  then starts `{srcexe}` again as the original user and closes. Remove starts the
+  uninstaller with its UI and closes.
   CI and local builds use the same pinned version in portable mode.
 
 Deliberately: .NET Framework 4.8 instead of .NET 8 — a 17 kB executable with no runtime to
@@ -106,7 +115,9 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
    and the `SetChargeThreshold` events in the `Lenovo-Power-BaseModule/Operational` log.
 3. With thresholds on, uninstall silently → nothing left, last log entry
    `SetChargeThreshold start=[0], stop=[0]`.
-4. Interactive install: threshold page validation, finish page hint, upgrade keeps values.
+4. Interactive install: mode dialog on a fresh install, threshold page validation, finish
+   page hint; with the app installed: Repair keeps the values, Reinstall shows the mode
+   dialog again, Remove uninstalls.
 
 Steps 1–3 are scripted and pass. Not covered by them, so checked by hand: the wizard
 pages (step 4), how the notification looks and that it does not take focus, the F12
