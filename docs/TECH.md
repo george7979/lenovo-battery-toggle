@@ -32,7 +32,7 @@ where the Vantage switch reads it from.
 | `Notification.cs` | Borderless, non-activating, timer-closed message |
 | `Text.cs` | Polish/English messages by `CurrentUICulture` |
 | `installer/LenovoBatteryToggle.iss` | Inno Setup 7 script |
-| `assets/make_icon.py` | Draws `app.ico` (9 sizes, larger battery below 32 px) and `assets/icon-256.png` |
+| `assets/make_icon.py` | Draws `app.ico`, `installer/settings.ico` (app icon with a gear, for the settings shortcut) — 9 sizes, larger battery below 32 px — and `assets/icon-256.png` |
 | `build.ps1` | `dotnet build` + `ISCC`, shared by local builds and CI |
 | `.github/workflows/build.yml` | CI build; tag `v*` publishes a release |
 
@@ -48,7 +48,7 @@ where the Vantage switch reads it from.
 
 | Location | Content | Removed by uninstaller |
 |---|---|---|
-| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, uninstaller | yes |
+| `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` | yes, whole folder |
 | Start menu (user or all users) | app shortcut, settings shortcut (Notepad) | yes |
 | `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |

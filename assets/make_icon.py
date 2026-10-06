@@ -1,12 +1,13 @@
 """Generates the app icon (variant A): ThinkPad-black tile, white battery, Lenovo-red charge
-level stopped by a white threshold marker.
+level stopped by a white threshold marker. The settings icon adds a gear in the corner.
 
 Each size is drawn separately with 4x supersampling; small sizes get a larger battery so it
 stays readable in the taskbar and the Start menu.
 
     uv run --with pillow python assets/make_icon.py
-writes src/LenovoBatteryToggle/app.ico and assets/icon-256.png
+writes src/LenovoBatteryToggle/app.ico, installer/settings.ico and assets/icon-256.png
 """
+import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 
@@ -45,10 +46,42 @@ def draw(n: int) -> Image.Image:
     return im.resize((n, n), Image.LANCZOS)
 
 
+def gear(d: ImageDraw.ImageDraw, cx: float, cy: float, r: float, fill, hole) -> None:
+    """Eight-tooth gear: a toothed outline, then a hole in the middle."""
+    teeth, points = 8, []
+    for i in range(teeth * 4):
+        angle = 2 * math.pi * i / (teeth * 4) - math.pi / (teeth * 4)
+        radius = r if (i % 4) in (1, 2) else r * 0.74
+        points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
+    d.polygon(points, fill=fill)
+    d.ellipse((cx - r * 0.34, cy - r * 0.34, cx + r * 0.34, cy + r * 0.34), fill=hole)
+
+
+def draw_settings(n: int) -> Image.Image:
+    """App icon with a red gear on a dark ring in the bottom-right corner."""
+    s = n * 4
+    small = n <= 32
+    im = draw(n).resize((s, s), Image.LANCZOS)
+    d = ImageDraw.Draw(im)
+    r = s * (0.27 if small else 0.21)
+    cx, cy = s - r * 1.3, s - r * 1.3
+    # Dark ring separates the gear from the battery outline
+    d.ellipse((cx - r * 1.18, cy - r * 1.18, cx + r * 1.18, cy + r * 1.18), fill=DARK)
+    gear(d, cx, cy, r, RED, DARK)
+    # Keep everything inside the rounded tile
+    mask = Image.new('L', (s, s), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, s - 1, s - 1), radius=s * 0.2, fill=255)
+    im.putalpha(Image.composite(im.getchannel('A'), mask, mask))
+    return im.resize((n, n), Image.LANCZOS)
+
+
 if __name__ == '__main__':
     root = Path(__file__).resolve().parent.parent
     images = [draw(n) for n in SIZES]
     images[0].save(root / 'src/LenovoBatteryToggle/app.ico', format='ICO',
                    sizes=[(n, n) for n in SIZES], append_images=images[1:])
     images[0].save(root / 'assets/icon-256.png')
-    print('written: app.ico (' + ', '.join(map(str, SIZES)) + '), icon-256.png')
+    settings = [draw_settings(n) for n in SIZES]
+    settings[0].save(root / 'installer/settings.ico', format='ICO',
+                     sizes=[(n, n) for n in SIZES], append_images=settings[1:])
+    print('written: app.ico, settings.ico (' + ', '.join(map(str, SIZES)) + '), icon-256.png')

@@ -80,11 +80,12 @@ pl.FinishedHint=Aby przełączać progi jednym klawiszem, otwórz Lenovo Vantage
 [Files]
 Source: "{#SourceDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\{#AppExe}.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "settings.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 ; Named after the app so the Start menu lists it right below the app itself
-Name: "{autoprograms}\{#AppName} Settings"; Filename: "{sys}\notepad.exe"; Parameters: """{#DataDir}\config.json"""
+Name: "{autoprograms}\{#AppName} Settings"; Filename: "{sys}\notepad.exe"; Parameters: """{#DataDir}\config.json"""; IconFilename: "{app}\settings.ico"
 
 [InstallDelete]
 ; Settings shortcut names used by pre-release builds; Repair replaces them with the one above
