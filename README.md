@@ -147,7 +147,7 @@ Running the app is the whole interface. Any way of starting it toggles the thres
 
 ## Configuration
 
-Start menu → **Charge threshold settings** opens the settings file in Notepad:
+Start menu → **Lenovo Battery Toggle Settings** opens the settings file in Notepad:
 
 ```json
 {
@@ -169,7 +169,7 @@ again also shows the current values and lets you change them.
 |---|---|
 | Program folder (see Installation) | `lenovo-battery-toggle.exe` and the uninstaller |
 | `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
-| Start menu | *Lenovo Battery Toggle* and *Charge threshold settings* |
+| Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 
 The app writes nothing else: no registry settings, no services, no scheduled tasks, no logs.
 The Lenovo driver itself records the threshold state in its own registry key, exactly as it

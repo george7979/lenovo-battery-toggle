@@ -42,14 +42,12 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "pl"; MessagesFile: "compiler:Languages\Polish.isl"
 
 [CustomMessages]
-en.SettingsShortcut=Charge threshold settings
-pl.SettingsShortcut=Ustawienia progów ładowania
 en.ThresholdsCaption=Charge thresholds
 pl.ThresholdsCaption=Progi ładowania
 en.ThresholdsDescription=Values used when the toggle switches thresholds on.
 pl.ThresholdsDescription=Wartości używane, gdy przełącznik włącza progi.
-en.ThresholdsPrompt=The battery starts charging below the start value and stops at the stop value. You can change them later from the Start menu.
-pl.ThresholdsPrompt=Bateria zaczyna się ładować poniżej wartości „start” i przestaje przy wartości „stop”. Możesz je zmienić później z menu Start.
+en.ThresholdsPrompt=The battery starts charging below the start value and stops at the stop value. You can change them later with "Lenovo Battery Toggle Settings" in the Start menu.
+pl.ThresholdsPrompt=Bateria zaczyna się ładować poniżej wartości „start” i przestaje przy wartości „stop”. Możesz je zmienić później skrótem „Lenovo Battery Toggle Settings” w menu Start.
 en.StartLabel=Start charging below (%):
 pl.StartLabel=Ładuj, gdy poziom spadnie poniżej (%):
 en.StopLabel=Stop charging at (%):
@@ -85,7 +83,13 @@ Source: "{#SourceDir}\{#AppExe}.config"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
-Name: "{autoprograms}\{cm:SettingsShortcut}"; Filename: "{sys}\notepad.exe"; Parameters: """{#DataDir}\config.json"""
+; Named after the app so the Start menu lists it right below the app itself
+Name: "{autoprograms}\{#AppName} Settings"; Filename: "{sys}\notepad.exe"; Parameters: """{#DataDir}\config.json"""
+
+[InstallDelete]
+; Settings shortcut names used by pre-release builds; Repair replaces them with the one above
+Type: files; Name: "{autoprograms}\Ustawienia progów ładowania.lnk"
+Type: files; Name: "{autoprograms}\Charge threshold settings.lnk"
 
 [UninstallRun]
 ; Leave the battery at its factory behaviour before the files go away
