@@ -97,8 +97,12 @@ Type: files; Name: "{autoprograms}\Ustawienia progów ładowania.lnk"
 Type: files; Name: "{autoprograms}\Charge threshold settings.lnk"
 
 [UninstallRun]
-; Leave the battery at its factory behaviour before the files go away
-Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"
+; Leave the battery at its factory behaviour before the files go away. Only for a per-user
+; install: an all-users uninstaller is elevated and cannot drop back to the user, and the
+; Lenovo tool sits in the user-writable profile. Setup's Uninstall action runs --off as the
+; user instead; the app also refuses to start the tool while elevated, which covers the
+; entry an older version left in the uninstall log.
+Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"; Check: not IsAdminInstallMode
 
 [UninstallDelete]
 ; Everything the app ever wrote: config.json, the downloaded ChargeThreshold.exe, any subfolder
@@ -160,6 +164,20 @@ begin
     Waited := Waited + 250;
   end;
   Result := not RegKeyExists(Root, UninstallKey);
+end;
+
+{ The all-users uninstaller skips --off (see [UninstallRun]), so switch thresholds off here,
+  as the signed-in user, before starting it }
+procedure TurnOffAsOriginalUser(Root: Integer);
+var
+  ResultCode: Integer;
+begin
+  try
+    ExecAsOriginalUser(AddBackslash(RegValue(Root, 'InstallLocation')) + '{#AppExe}', '--off',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  except
+    { Uninstall goes on; thresholds stay as they are }
+  end;
 end;
 
 function ConfigPath: String;
@@ -245,7 +263,11 @@ begin
     Result := False;
     Removed := True;
     if InstalledForMe then Removed := UninstallFrom(HKCU) and Removed;
-    if InstalledForAll then Removed := UninstallFrom(HKLM) and Removed;
+    if InstalledForAll then
+    begin
+      TurnOffAsOriginalUser(HKLM);
+      Removed := UninstallFrom(HKLM) and Removed;
+    end;
     if Removed then
       MsgBox(CustomMessage('Uninstalled'), mbInformation, MB_OK)
     else

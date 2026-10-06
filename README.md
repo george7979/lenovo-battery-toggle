@@ -93,6 +93,8 @@ It belongs to Lenovo, so this project does not redistribute it. Instead:
   (or on first use, if the download during installation failed),
 - it **checks the digital signature** and uses the file only if it is validly signed by
   Lenovo; otherwise the file is deleted,
+- it never starts the file with administrator rights: the data folder is writable without
+  them, so an app started *Run as administrator* refuses to work,
 - it keeps the file in the app's data folder and runs it in the background, without a
   console window.
 
@@ -190,8 +192,14 @@ Windows Settings → Apps → **Lenovo Battery Toggle** → Uninstall. The unins
 2. deletes the program folder, the whole `%LOCALAPPDATA%\LenovoBatteryToggle` folder and
    the Start menu entries.
 
-With an all-users installation, settings are per user: the uninstaller removes the data
-folder of the user who runs it.
+With an all-users installation:
+
+- settings are per user: the uninstaller removes the data folder of the user who runs it,
+- the uninstaller runs with administrator rights and therefore does **not** switch the
+  thresholds off (it would have to start the Lenovo tool from a folder that is writable
+  without those rights). To have them switched off, uninstall by running the installer and
+  choosing **Uninstall**, which switches them off as you before removing the app, or press
+  the toggle until they are off before uninstalling from Windows Settings.
 
 ## Troubleshooting
 

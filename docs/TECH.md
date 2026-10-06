@@ -26,7 +26,8 @@ where the Vantage switch reads it from.
 |---|---|
 | `src/LenovoBatteryToggle/Program.cs` | Modes, single-instance mutex, toggle flow |
 | `ChargeThresholdTool.cs` | Download, cache and run `ChargeThreshold.exe`; parse `status` |
-| `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject `O=Lenovo` |
+| `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject with `CN=Lenovo` and `O=Lenovo` as whole name parts |
+| `Elevation.cs` | Whether the process is the elevated half of a split UAC token (`TokenElevationTypeFull`) |
 | `PowerDriver.cs` | WMI check for the `POWERMGR_COMPONENT` device with status `OK` |
 | `Settings.cs` | `config.json`: `start`, `stop` (defaults 75/80, validated) and `notificationSeconds` (default 4, clamped to 2–10; missing in older files) |
 | `SettingsForm.cs` | `--settings` window: two `NumericUpDown` fields (0–100), Save enabled only when start < stop; re-applies the values when thresholds are on |
@@ -44,7 +45,7 @@ where the Vantage switch reads it from.
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
 | `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
 | `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
-| `--off` | uninstaller | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
+| `--off` | per-user uninstaller, setup's Uninstall action | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
 
@@ -85,6 +86,17 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
   into the signed-in user's profile. The uninstaller removes the data folder of the user
   who runs it.
+- **Never elevated with the user's files.** `ChargeThreshold.exe` lives in
+  `%LOCALAPPDATA%`, which the same user's unelevated processes can write, so starting it
+  (or loading a DLL planted beside it) from an elevated process would be a UAC bypass.
+  `ChargeThresholdTool.Ensure()` refuses and `Existing()` returns null when
+  `Elevation.IsElevated`; without UAC (`TokenElevationTypeDefault`) there is no boundary and
+  the app works. The `[UninstallRun]` `--off` entry has `Check: not IsAdminInstallMode`,
+  because an all-users uninstaller is elevated and Inno cannot run anything as the original
+  user at uninstall time. Setup's Uninstall action calls `--off` through
+  `ExecAsOriginalUser` before it starts an all-users uninstaller. An all-users install's
+  uninstall log from 0.1.0 still holds an `--off` entry (Repair appends to the log, and the
+  latest `RunOnceId` entry runs); the app's own check makes it a no-op.
 - **Maintenance page** (custom `[Code]`): not installed → the mode dialog and a normal
   install. Installed (Apps entry `...\Uninstall\{AppId}_is1` under HKCU and/or HKLM) →
   Inno reuses the previous mode (`UsePreviousPrivileges`, no mode dialog) and the page
@@ -144,5 +156,8 @@ download (silent mode suppresses them, and the test machine has the driver).
 
 ## Known issues
 
+- Uninstalling an all-users installation from Windows Settings leaves the thresholds as
+  they are (see *Never elevated with the user's files*); setup's Uninstall action switches
+  them off.
 - Vantage shows the switch as "off" regardless of the state when the
   `PWRMGRV\ConfKeys` branch is missing; fix in README → Troubleshooting.

@@ -61,7 +61,9 @@ other ThinkPad owners.
 - With the app installed, the installer offers only Repair (keeps the settings, also used
   for updates) or Uninstall (every installation found).
 - The uninstaller switches thresholds off and removes everything the app wrote,
-  including folders.
+  including folders. For an all-users install, thresholds are switched off when the
+  uninstall starts from the installer: the app never runs Lenovo's tool with administrator
+  rights.
 
 ## Non-functional requirements
 

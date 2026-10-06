@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- The app no longer starts `ChargeThreshold.exe` with administrator rights. The file lives
+  in the user's profile, which programs running without those rights can change, so the
+  elevated uninstaller of an all-users installation could be used to bypass UAC. The app
+  now refuses to work when started *Run as administrator*, and the all-users uninstaller
+  no longer switches thresholds off; the installer's **Uninstall** action does that as the
+  signed-in user before removing the app.
+- The signature check requires `CN=Lenovo` and `O=Lenovo` as whole parts of the signer
+  name instead of the text `O=Lenovo` anywhere in it.
+
 ## [0.1.0] - 2026-10-06
 
 First release.

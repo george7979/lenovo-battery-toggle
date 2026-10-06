@@ -113,7 +113,8 @@ namespace LenovoBatteryToggle
 
         private static int TurnOffQuietly()
         {
-            // Leaves the battery at its factory behaviour; never downloads anything
+            // Leaves the battery at its factory behaviour; never downloads anything, and does
+            // nothing when elevated (Existing() returns null then)
             try
             {
                 var tool = ChargeThresholdTool.Existing();

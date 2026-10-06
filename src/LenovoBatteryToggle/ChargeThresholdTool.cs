@@ -27,6 +27,7 @@ namespace LenovoBatteryToggle
         /// </summary>
         public static ChargeThresholdTool Ensure()
         {
+            if (Elevation.IsElevated) throw new InvalidOperationException(Text.Elevated);
             var path = ToolPath;
             if (!File.Exists(path))
             {
@@ -53,9 +54,14 @@ namespace LenovoBatteryToggle
             return new ChargeThresholdTool(path);
         }
 
-        /// <summary>The cached copy, or null when the app never downloaded it.</summary>
+        /// <summary>
+        /// The cached copy, or null when the app never downloaded it or runs elevated (see
+        /// <see cref="Elevation"/>; an all-users uninstaller from an older version still runs --off).
+        /// </summary>
         public static ChargeThresholdTool Existing() =>
-            File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath) ? new ChargeThresholdTool(ToolPath) : null;
+            !Elevation.IsElevated && File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath)
+                ? new ChargeThresholdTool(ToolPath)
+                : null;
 
         public ThresholdState Status() => ThresholdState.Parse(Run("status"));
 
