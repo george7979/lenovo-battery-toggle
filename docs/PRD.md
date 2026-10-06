@@ -34,12 +34,15 @@ other ThinkPad owners.
 ### FR2: Feedback
 - After the change the app shows the state it read back from the system, not the one it
   intended to set.
-- The message closes by itself (4 s; errors 6 s), needs no click and does not take focus
-  from the active window.
+- The message closes by itself, needs no click and does not take focus from the active
+  window. Its time is a setting (2–10 s, default 4 s); error messages stay a fixed 6 s.
+- When ChargeThreshold.exe cannot be obtained, the app and the installer show a dialog
+  that stays until closed and tells where to download the file and where to save it.
 - Messages are in Polish on a Polish Windows and in English everywhere else.
 
 ### FR3: Settings
-- Start and stop values are set in a small settings window opened from the Start menu.
+- Start and stop values and the notification time are set in a small settings window
+  opened from the Start menu.
   It accepts only valid values, so a typo cannot break the settings; when thresholds are on,
   saving applies the new values right away.
 - The installer asks for the values and keeps the current ones on upgrade.

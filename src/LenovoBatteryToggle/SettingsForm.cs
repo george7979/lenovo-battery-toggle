@@ -14,6 +14,10 @@ namespace LenovoBatteryToggle
     {
         private readonly NumericUpDown _start = NewField();
         private readonly NumericUpDown _stop = NewField();
+        private readonly NumericUpDown _seconds = new NumericUpDown
+        {
+            Minimum = Settings.MinSeconds, Maximum = Settings.MaxSeconds, Width = 70, TextAlign = HorizontalAlignment.Right,
+        };
         private readonly Label _hint = new Label { AutoSize = true, ForeColor = SystemColors.GrayText };
         private readonly Button _save = new Button { Text = Msg.Save, AutoSize = true, DialogResult = DialogResult.None };
 
@@ -32,6 +36,7 @@ namespace LenovoBatteryToggle
 
             _start.Value = settings.Start;
             _stop.Value = settings.Stop;
+            _seconds.Value = settings.NotificationSeconds;
             _start.ValueChanged += (sender, args) => UpdateState();
             _stop.ValueChanged += (sender, args) => UpdateState();
 
@@ -55,6 +60,8 @@ namespace LenovoBatteryToggle
             layout.Controls.Add(_stop, 1, 2);
             layout.Controls.Add(_hint, 0, 3);
             layout.SetColumnSpan(_hint, 2);
+            layout.Controls.Add(FieldLabel(Msg.SecondsLabel), 0, 4);
+            layout.Controls.Add(_seconds, 1, 4);
 
             var buttons = new FlowLayoutPanel
             {
@@ -65,7 +72,7 @@ namespace LenovoBatteryToggle
             };
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(_save);
-            layout.Controls.Add(buttons, 0, 4);
+            layout.Controls.Add(buttons, 0, 5);
             layout.SetColumnSpan(buttons, 2);
 
             Controls.Add(layout);
@@ -90,7 +97,7 @@ namespace LenovoBatteryToggle
         {
             var start = (int)_start.Value;
             var stop = (int)_stop.Value;
-            Settings.Save(start, stop);
+            Settings.Save(start, stop, (int)_seconds.Value);
 
             // When thresholds are on now, apply the new values right away
             try

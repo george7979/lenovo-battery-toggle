@@ -30,8 +30,8 @@ key: one press switches the mode and tells you which mode you are in now.
 - **Toggles** charge thresholds: off when they are on, on when they are off.
 - **Uses your values** when switching on (default: start below 75%, stop at 80%), set in
   a small settings window.
-- **Shows the result** for four seconds in the corner of the screen and disappears by
-  itself. No buttons, no window to close, and it does not steal focus from your work:
+- **Shows the result** in the corner of the screen for 4 seconds (adjustable from 2 to 10)
+  and disappears by itself. No buttons, no window to close, and it does not steal focus from your work:
 
   > Charge thresholds OFF: the battery charges to 100%.
   >
@@ -152,19 +152,22 @@ Starting the app is the whole interface: every start toggles the thresholds. (Th
 
 ## Configuration
 
-Start menu → **Lenovo Battery Toggle Settings** opens a small window with the two values:
+Start menu → **Lenovo Battery Toggle Settings** opens a small window:
 
 - **Start charging below** — charging starts when the battery drops below this level,
-- **Stop charging at** — charging stops at this level.
+- **Stop charging at** — charging stops at this level,
+- **Show the notification for** — how long the message stays on screen, 2 to 10 seconds
+  (error messages always stay 6 seconds).
 
-The fields accept only numbers from 0 to 100, and **Save** stays disabled until start is
-lower than stop, so the settings cannot be broken by a typo. If the thresholds are on at
+The threshold fields accept only numbers from 0 to 100, and **Save** stays disabled until
+start is lower than stop, so the settings cannot be broken by a typo. If the thresholds are on at
 that moment, the new values are applied right away; otherwise they are used the next time
 the app switches the thresholds on.
 
 The values are stored in `%LOCALAPPDATA%\LenovoBatteryToggle\config.json`
-(`{"start": 75, "stop": 80}`); editing the file by hand also works, and the app reports an
-invalid file instead of using it.
+(`{"start": 75, "stop": 80, "notificationSeconds": 4}`); editing the file by hand also
+works. Invalid thresholds are reported instead of used; a notification time outside 2–10
+is brought into that range.
 
 ## Files on your computer
 
@@ -195,8 +198,18 @@ folder of the user who runs it.
 **"The Lenovo Power and Battery driver is missing"** — run Windows Update, or install
 package DS541411 from Lenovo Support.
 
-**"Could not download ChargeThreshold.exe"** — the app retries on the next run; check the
-internet connection or a firewall blocking `download.lenovo.com`.
+**"Could not download ChargeThreshold.exe"** — the installer and the app show this when the
+download fails: no internet connection, a firewall blocking `download.lenovo.com`, or the
+file is no longer available at Lenovo. The app retries on the next run. To install the file
+by hand, download
+
+```
+https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThreshold/ChargeThreshold.exe
+```
+
+and save it as `%LOCALAPPDATA%\LenovoBatteryToggle\ChargeThreshold.exe`. The app accepts
+it only with a valid Lenovo signature, and the uninstaller removes it like any other file
+of the app. The message window can be copied with Ctrl+C.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed

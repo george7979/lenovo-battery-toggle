@@ -11,6 +11,8 @@
 
 #define AppName "Lenovo Battery Toggle"
 #define AppExe "lenovo-battery-toggle.exe"
+; Must match ChargeThresholdTool.DownloadUrl in the app
+#define ToolUrl "https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThreshold/ChargeThreshold.exe"
 ; Must match Settings.DataDirectory in the app
 #define DataDir "{localappdata}\LenovoBatteryToggle"
 
@@ -56,8 +58,10 @@ en.InvalidThresholds=Enter whole numbers with 0 <= start < stop <= 100.
 pl.InvalidThresholds=Wpisz liczby całkowite spełniające 0 <= start < stop <= 100.
 en.DriverMissing=The Lenovo Power and Battery driver was not found.%n%nThe app needs it to change charge thresholds. Run Windows Update, or install package DS541411 from Lenovo Support, then use the app.
 pl.DriverMissing=Nie znaleziono sterownika Lenovo Power and Battery.%n%nAplikacja potrzebuje go do zmiany progów ładowania. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo, a potem użyj aplikacji.
-en.PrepareFailed=Could not download ChargeThreshold.exe from Lenovo now. The app will try again on first use.
-pl.PrepareFailed=Nie udało się teraz pobrać ChargeThreshold.exe od Lenovo. Aplikacja spróbuje ponownie przy pierwszym użyciu.
+en.ToolUnavailable=Could not download ChargeThreshold.exe from Lenovo (no internet connection, or the file is no longer available at Lenovo). The app cannot switch thresholds without it.%n%nDownload it manually from:%n{#ToolUrl}%n%nand save it as:%n{#DataDir}\ChargeThreshold.exe%n%nThe app accepts the file only with a valid Lenovo signature. (Ctrl+C copies this message.)
+pl.ToolUnavailable=Nie udało się pobrać ChargeThreshold.exe od Lenovo (brak internetu albo plik nie jest już dostępny u Lenovo). Bez niego aplikacja nie przełączy progów.%n%nPobierz go ręcznie z:%n{#ToolUrl}%n%ni zapisz jako:%n{#DataDir}\ChargeThreshold.exe%n%nAplikacja przyjmie plik tylko z ważnym podpisem Lenovo. (Ctrl+C kopiuje treść tego komunikatu.)
+en.PrepareFailed=The app could not be prepared now. It will try again on first use.
+pl.PrepareFailed=Nie udało się teraz przygotować aplikacji. Spróbuje ponownie przy pierwszym użyciu.
 en.MaintenanceCaption=Lenovo Battery Toggle is already installed
 pl.MaintenanceCaption=Lenovo Battery Toggle jest już zainstalowany
 en.MaintenanceDescription=Choose what you want to do.
@@ -275,6 +279,8 @@ begin
   begin
     if ResultCode = 2 then
       SuppressibleMsgBox(Msg('DriverMissing'), mbError, MB_OK, IDOK)
+    else if ResultCode = 3 then
+      SuppressibleMsgBox(ExpandConstant(Msg('ToolUnavailable')), mbError, MB_OK, IDOK)
     else if ResultCode <> 0 then
       SuppressibleMsgBox(Msg('PrepareFailed'), mbInformation, MB_OK, IDOK);
   end;

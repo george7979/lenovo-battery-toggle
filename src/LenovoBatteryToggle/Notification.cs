@@ -10,8 +10,9 @@ namespace LenovoBatteryToggle
     internal sealed class Notification : Form
     {
         private const int ScreenMargin = 24;
+        private const int ErrorSeconds = 6;
 
-        private Notification(string text, bool isError)
+        private Notification(string text, bool isError, int seconds)
         {
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
@@ -31,7 +32,8 @@ namespace LenovoBatteryToggle
                 Padding = new Padding(18, 14, 18, 14),
             });
 
-            var timer = new Timer { Interval = isError ? 6000 : 4000 };
+            // Errors stay a fixed time; the normal message uses the time from the settings
+            var timer = new Timer { Interval = (isError ? ErrorSeconds : seconds) * 1000 };
             timer.Tick += (sender, args) => { timer.Stop(); Close(); };
             Load += (sender, args) =>
             {
@@ -55,6 +57,7 @@ namespace LenovoBatteryToggle
             }
         }
 
-        public static void Show(string text, bool isError) => Application.Run(new Notification(text, isError));
+        public static void Show(string text, bool isError, int seconds = Settings.DefaultSeconds) =>
+            Application.Run(new Notification(text, isError, seconds));
     }
 }

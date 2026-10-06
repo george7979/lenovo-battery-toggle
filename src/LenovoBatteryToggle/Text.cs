@@ -29,6 +29,8 @@ namespace LenovoBatteryToggle
 
         public static string StopLabel => Pick("Przestań ładować przy (%):", "Stop charging at (%):");
 
+        public static string SecondsLabel => Pick("Czas wyświetlania powiadomienia (s):", "Show the notification for (s):");
+
         public static string Save => Pick("Zapisz", "Save");
 
         public static string Cancel => Pick("Anuluj", "Cancel");
@@ -49,13 +51,13 @@ namespace LenovoBatteryToggle
             "Brak sterownika Lenovo Power and Battery. Uruchom Windows Update albo zainstaluj paczkę DS541411 ze strony wsparcia Lenovo.",
             "The Lenovo Power and Battery driver is missing. Run Windows Update or install package DS541411 from Lenovo Support.");
 
-        public static string BadSignature => Pick(
-            "Pobrany ChargeThreshold.exe nie ma ważnego podpisu Lenovo i został usunięty.",
-            "The downloaded ChargeThreshold.exe has no valid Lenovo signature and was deleted.");
+        public static string BadSignature(string url, string path) => Pick(
+            $"ChargeThreshold.exe nie ma ważnego podpisu Lenovo i został usunięty. Pobierz go ręcznie z\n{url}\ni zapisz jako\n{path}",
+            $"ChargeThreshold.exe has no valid Lenovo signature and was deleted. Download it manually from\n{url}\nand save it as\n{path}");
 
-        public static string DownloadFailed(string reason) => Pick(
-            $"Nie udało się pobrać ChargeThreshold.exe od Lenovo: {reason}",
-            $"Could not download ChargeThreshold.exe from Lenovo: {reason}");
+        public static string DownloadFailed(string reason, string url, string path) => Pick(
+            $"Nie udało się pobrać ChargeThreshold.exe od Lenovo ({reason}). Pobierz go ręcznie z\n{url}\ni zapisz jako\n{path}",
+            $"Could not download ChargeThreshold.exe from Lenovo ({reason}). Download it manually from\n{url}\nand save it as\n{path}");
 
         public static string ToolFailed(string arguments, int code, string output) => Pick(
             $"ChargeThreshold.exe {arguments} zwrócił kod {code}. Czy sterownik Lenovo Power and Battery jest zainstalowany?\n{output}",

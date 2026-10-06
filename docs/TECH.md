@@ -28,9 +28,9 @@ where the Vantage switch reads it from.
 | `ChargeThresholdTool.cs` | Download, cache and run `ChargeThreshold.exe`; parse `status` |
 | `Signature.cs` | `WinVerifyTrust` (file hash + chain) plus signer subject `O=Lenovo` |
 | `PowerDriver.cs` | WMI check for the `POWERMGR_COMPONENT` device with status `OK` |
-| `Settings.cs` | `config.json` (start/stop), defaults 75/80, validation |
+| `Settings.cs` | `config.json`: `start`, `stop` (defaults 75/80, validated) and `notificationSeconds` (default 4, clamped to 2–10; missing in older files) |
 | `SettingsForm.cs` | `--settings` window: two `NumericUpDown` fields (0–100), Save enabled only when start < stop; re-applies the values when thresholds are on |
-| `Notification.cs` | Borderless, non-activating, timer-closed message |
+| `Notification.cs` | Borderless, non-activating, timer-closed message (time from settings, errors 6 s) |
 | `Text.cs` | Polish/English messages by `CurrentUICulture` |
 | `installer/LenovoBatteryToggle.iss` | Inno Setup 7 script |
 | `assets/make_icon.py` | Draws `app.ico`, `installer/settings.ico` (app icon with a gear, for the settings shortcut) — 9 sizes, larger battery below 32 px — and `assets/icon-256.png` |
@@ -42,8 +42,8 @@ where the Vantage switch reads it from.
 | Command | Used by | Behaviour |
 |---|---|---|
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
-| `--prepare [start stop]` | installer | Write the wizard values (or defaults), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed (invalid values, or download retried on first use), `2` driver missing |
-| `--settings` | settings shortcut | Window for start/stop; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
+| `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
+| `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
 | `--off` | uninstaller | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
@@ -67,6 +67,11 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `Charge threshold for Battery #1: OFF.` or
   `Charge threshold for Battery #1: Start at 75%, Stop at 80%.`
 - `off` clears only the `*Control` flags; the percentages stay in the registry.
+- When the file cannot be obtained (`ToolUnavailableException`: download failed, or the
+  cached file is not signed by Lenovo and gets deleted), the toggle shows a `MessageBox`
+  instead of a notification: the message holds the URL and the target path, and must stay
+  until the user has read or copied it. The installer shows the same instructions for exit
+  code `3`.
 
 ## Technical stack
 
@@ -125,7 +130,10 @@ Manual, on a ThinkPad (the behaviour depends on the driver and firmware):
    installation and closes.
 
 Steps 1–3 are scripted and pass; `--prepare <start> <stop>` was checked to write valid
-values and reject invalid ones. Not covered by them, so checked by hand: the wizard pages
+values, reject invalid ones and keep `notificationSeconds`; a file without that key reads
+as 4 s; with 2 s and 4 s the toggle process takes 2.4 s and 4.4 s; replacing the cached
+tool with a file signed by someone else makes `--prepare` exit `3` and the toggle delete
+the file. Not covered by them, so checked by hand: the wizard pages
 (step 4), the settings window (Save disabled when start >= stop, values applied at once
 when thresholds are on), how the notification looks and that it does not take focus, the
 F12 assignment in Vantage, and the installer messages for a missing driver or a failed

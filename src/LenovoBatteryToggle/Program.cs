@@ -10,11 +10,13 @@ namespace LenovoBatteryToggle
         private const int Ok = 0;
         private const int Failed = 1;
         private const int DriverMissing = 2;
+        private const int ToolUnavailable = 3;
 
         /// <summary>
         /// No arguments: toggle thresholds and show the result.
         /// --prepare [start stop]: check the driver, write the given (or default) settings,
-        ///   download the Lenovo tool; no UI, no toggle.
+        ///   download the Lenovo tool; no UI, no toggle. Exit 0 OK, 1 failed, 2 driver missing,
+        ///   3 ChargeThreshold.exe not obtained.
         /// --off: switch thresholds off silently (used by the uninstaller).
         /// --settings: window for the start/stop values (used by the settings shortcut).
         /// </summary>
@@ -40,8 +42,16 @@ namespace LenovoBatteryToggle
                 if (!isFirst) return Ok;
                 try
                 {
-                    Notification.Show(Toggle(), isError: false);
+                    var message = Toggle(out var seconds);
+                    Notification.Show(message, isError: false, seconds);
                     return Ok;
+                }
+                catch (ToolUnavailableException ex)
+                {
+                    // Needs action (a manual download), so a dialog that stays and can be copied
+                    // with Ctrl+C, not a notification that closes before the URL can be read
+                    MessageBox.Show(ex.Message, "Lenovo Battery Toggle", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return Failed;
                 }
                 catch (Exception ex)
                 {
@@ -51,10 +61,11 @@ namespace LenovoBatteryToggle
             }
         }
 
-        private static string Toggle()
+        private static string Toggle(out int seconds)
         {
             if (!PowerDriver.IsInstalled()) throw new InvalidOperationException(Text.DriverMissing);
             var settings = Settings.Load();
+            seconds = settings.NotificationSeconds;
             var tool = ChargeThresholdTool.Ensure();
 
             var before = tool.Status();
@@ -86,6 +97,11 @@ namespace LenovoBatteryToggle
                 Settings.Load();
                 ChargeThresholdTool.Ensure();
                 return Ok;
+            }
+            catch (ToolUnavailableException)
+            {
+                // The installer explains how to get the file by hand
+                return ToolUnavailable;
             }
             catch (Exception)
             {

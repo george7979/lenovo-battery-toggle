@@ -12,20 +12,22 @@ namespace LenovoBatteryToggle
     /// </summary>
     internal sealed class ChargeThresholdTool
     {
-        private const string DownloadUrl =
+        public const string DownloadUrl =
             "https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThreshold/ChargeThreshold.exe";
+
+        public static readonly string ToolPath = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
 
         private readonly string _path;
 
         private ChargeThresholdTool(string path) { _path = path; }
 
         /// <summary>
-        /// Uses the cached copy, or downloads it from Lenovo on first run.
-        /// The file is Lenovo's, so releases do not bundle it.
+        /// Uses the cached copy (downloaded earlier or saved there by hand), or downloads it
+        /// from Lenovo. The file is Lenovo's, so releases do not bundle it.
         /// </summary>
         public static ChargeThresholdTool Ensure()
         {
-            var path = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
+            var path = ToolPath;
             if (!File.Exists(path))
             {
                 Directory.CreateDirectory(Settings.DataDirectory);
@@ -37,7 +39,8 @@ namespace LenovoBatteryToggle
                 }
                 catch (WebException ex)
                 {
-                    throw new InvalidOperationException(Text.DownloadFailed(ex.Message), ex);
+                    File.Delete(temp);
+                    throw new ToolUnavailableException(Text.DownloadFailed(ex.Message, DownloadUrl, path), ex);
                 }
                 File.Move(temp, path);
             }
@@ -45,17 +48,14 @@ namespace LenovoBatteryToggle
             if (!Signature.IsSignedByLenovo(path))
             {
                 File.Delete(path);
-                throw new InvalidOperationException(Text.BadSignature);
+                throw new ToolUnavailableException(Text.BadSignature(DownloadUrl, path));
             }
             return new ChargeThresholdTool(path);
         }
 
         /// <summary>The cached copy, or null when the app never downloaded it.</summary>
-        public static ChargeThresholdTool Existing()
-        {
-            var path = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
-            return File.Exists(path) && Signature.IsSignedByLenovo(path) ? new ChargeThresholdTool(path) : null;
-        }
+        public static ChargeThresholdTool Existing() =>
+            File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath) ? new ChargeThresholdTool(ToolPath) : null;
 
         public ThresholdState Status() => ThresholdState.Parse(Run("status"));
 
@@ -81,6 +81,12 @@ namespace LenovoBatteryToggle
                 return output.Trim();
             }
         }
+    }
+
+    /// <summary>ChargeThreshold.exe could not be obtained: download failed or the file is not Lenovo's.</summary>
+    internal sealed class ToolUnavailableException : InvalidOperationException
+    {
+        public ToolUnavailableException(string message, Exception inner = null) : base(message, inner) { }
     }
 
     /// <summary>State parsed from "ChargeThreshold.exe status". The tool prints English text in every Windows language.</summary>
