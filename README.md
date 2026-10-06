@@ -93,8 +93,9 @@ It belongs to Lenovo, so this project does not redistribute it. Instead:
   (or on first use, if the download during installation failed),
 - it **checks the digital signature** and uses the file only if it is validly signed by
   Lenovo; otherwise the file is deleted,
-- it never starts the file with administrator rights: the data folder is writable without
-  them, so an app started *Run as administrator* refuses to work,
+- with an all-users installation it keeps the file in the program folder, which only
+  administrators can change, so the uninstaller (which runs with administrator rights)
+  can use it safely; the app never runs a copy from your profile with administrator rights,
 - it keeps the file in the app's data folder and runs it in the background, without a
   console window.
 
@@ -176,7 +177,7 @@ is brought into that range.
 | Location | Content |
 |---|---|
 | Program folder (see Installation) | `lenovo-battery-toggle.exe` with its `.config` file, the settings icon and the uninstaller |
-| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and `ChargeThreshold.exe` (downloaded from Lenovo) |
+| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json` (your thresholds) and, for a per-user installation, `ChargeThreshold.exe` (downloaded from Lenovo) |
 | Start menu | *Lenovo Battery Toggle* and *Lenovo Battery Toggle Settings* |
 
 Apart from the standard entry in Windows Apps, created by the installer, nothing else is
@@ -192,15 +193,11 @@ Windows Settings → Apps → **Lenovo Battery Toggle** → Uninstall. The unins
 2. deletes the program folder, the whole `%LOCALAPPDATA%\LenovoBatteryToggle` folder and
    the Start menu entries.
 
-With an all-users installation:
+This works the same whether you uninstall from Windows Settings or with the installer's
+**Uninstall** action.
 
-- settings are per user: the uninstaller removes the data folder of the user who runs it,
-- the uninstaller runs with administrator rights and therefore does **not** switch the
-  thresholds off (it would have to start the Lenovo tool from a folder that is writable
-  without those rights). To have them switched off, run the installer and choose
-  **Uninstall**: it switches them off under your own account, without administrator
-  rights, before removing the app. Or toggle them off before uninstalling from Windows
-  Settings.
+With an all-users installation, settings are per user: the uninstaller removes the data
+folder of the user who runs it.
 
 ## Troubleshooting
 

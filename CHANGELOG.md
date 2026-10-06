@@ -8,12 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Security
 
-- The app no longer starts `ChargeThreshold.exe` with administrator rights. The file lives
-  in the user's profile, which programs running without those rights can change, so the
-  elevated uninstaller of an all-users installation could be used to bypass UAC. The app
-  now refuses to work when started *Run as administrator*, and the all-users uninstaller
-  no longer switches thresholds off; the installer's **Uninstall** action does that as the
-  signed-in user before removing the app.
+- The app no longer starts `ChargeThreshold.exe` from the user's profile with
+  administrator rights. The profile can be changed by programs running without those
+  rights, so the elevated uninstaller of an all-users installation could be used to bypass
+  UAC. An all-users installation now keeps its own copy of the tool in the program folder,
+  which only administrators can change, and the uninstaller uses that copy; uninstalling
+  from Windows Settings or from the installer switches the thresholds off as before.
 - The signature check requires `CN=Lenovo` and `O=Lenovo` as whole parts of the signer
   name instead of the text `O=Lenovo` anywhere in it.
 

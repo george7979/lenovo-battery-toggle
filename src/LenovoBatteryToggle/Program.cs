@@ -17,6 +17,8 @@ namespace LenovoBatteryToggle
         /// --prepare [start stop]: check the driver, write the given (or default) settings,
         ///   download the Lenovo tool; no UI, no toggle. Exit 0 OK, 1 failed, 2 driver missing,
         ///   3 ChargeThreshold.exe not obtained.
+        /// --install-tool: download ChargeThreshold.exe next to the app (used by an elevated
+        ///   all-users setup). Exit 0 OK, 1 failed, 3 not obtained.
         /// --off: switch thresholds off silently (used by the uninstaller).
         /// --settings: window for the start/stop values (used by the settings shortcut).
         /// </summary>
@@ -25,6 +27,7 @@ namespace LenovoBatteryToggle
         {
             var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
             if (mode == "--prepare") return Prepare(args);
+            if (mode == "--install-tool") return InstallTool();
             if (mode == "--off") return TurnOffQuietly();
 
             Application.EnableVisualStyles();
@@ -111,10 +114,28 @@ namespace LenovoBatteryToggle
             }
         }
 
+        private static int InstallTool()
+        {
+            // Setup goes on either way; without this copy --prepare falls back to the user's copy
+            try
+            {
+                ChargeThresholdTool.InstallProtected();
+                return Ok;
+            }
+            catch (ToolUnavailableException)
+            {
+                return ToolUnavailable;
+            }
+            catch (Exception)
+            {
+                return Failed;
+            }
+        }
+
         private static int TurnOffQuietly()
         {
-            // Leaves the battery at its factory behaviour; never downloads anything, and does
-            // nothing when elevated (Existing() returns null then)
+            // Leaves the battery at its factory behaviour; never downloads anything. An elevated
+            // (all-users) uninstaller gets only the protected copy next to the app
             try
             {
                 var tool = ChargeThresholdTool.Existing();

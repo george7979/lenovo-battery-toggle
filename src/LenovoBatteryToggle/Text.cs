@@ -52,8 +52,8 @@ namespace LenovoBatteryToggle
             "The Lenovo Power and Battery driver is missing. Run Windows Update or install package DS541411 from Lenovo Support.");
 
         public static string Elevated => Pick(
-            "Lenovo Battery Toggle nie działa uruchomiony jako administrator. Uruchom go zwykłym skrótem albo klawiszem.",
-            "Lenovo Battery Toggle does not run as administrator. Start it normally, from its shortcut or key.");
+            "Aplikację uruchomiono jako administrator, a ta instalacja nie ma własnej kopii ChargeThreshold.exe w folderze programu. Uruchom ją zwykłym skrótem albo klawiszem.",
+            "The app was started as administrator, and this installation has no copy of ChargeThreshold.exe in the program folder. Start it normally, from its shortcut or key.");
 
         public static string BadSignature(string url, string path) => Pick(
             $"ChargeThreshold.exe nie ma ważnego podpisu Lenovo i został usunięty. Pobierz go ręcznie z\n{url}\ni zapisz jako\n{path}",

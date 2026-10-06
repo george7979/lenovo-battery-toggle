@@ -97,16 +97,16 @@ Type: files; Name: "{autoprograms}\Ustawienia progów ładowania.lnk"
 Type: files; Name: "{autoprograms}\Charge threshold settings.lnk"
 
 [UninstallRun]
-; Leave the battery at its factory behaviour before the files go away. Only for a per-user
-; install: an all-users uninstaller is elevated and cannot drop back to the user, and the
-; Lenovo tool sits in the user-writable profile. Setup's Uninstall action runs --off as the
-; user instead; the app also refuses to start the tool while elevated, which covers the
-; entry an older version left in the uninstall log.
-Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"; Check: not IsAdminInstallMode
+; Leave the battery at its factory behaviour before the files go away. A per-user uninstaller
+; runs unelevated and uses the user's copy of the Lenovo tool; an all-users uninstaller is
+; elevated and the app then uses only the copy setup put in {app} (see --install-tool).
+Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"
 
 [UninstallDelete]
 ; Everything the app ever wrote: config.json, the downloaded ChargeThreshold.exe, any subfolder
 Type: filesandordirs; Name: "{#DataDir}"
+; Downloaded by --install-tool, so not removed with the [Files] entries
+Type: files; Name: "{app}\ChargeThreshold.exe"
 ; {app} is not listed: Inno removes its own files and the empty folder, and a
 ; filesandordirs entry would wipe a pre-existing folder chosen as the install directory
 
@@ -166,8 +166,8 @@ begin
   Result := not RegKeyExists(Root, UninstallKey);
 end;
 
-{ The all-users uninstaller skips --off (see [UninstallRun]), so switch thresholds off here,
-  as the signed-in user, before starting it }
+{ Fallback for an all-users install whose --install-tool failed: its elevated uninstaller has
+  no tool it may run, so switch thresholds off here, as the signed-in user, before starting it }
 procedure TurnOffAsOriginalUser(Root: Integer);
 var
   ResultCode: Integer;
@@ -290,6 +290,13 @@ var
   ResultCode: Integer;
 begin
   if CurStep <> ssPostInstall then Exit;
+
+  { All users: download the Lenovo tool into the program folder, where only administrators
+    can write, so the elevated uninstaller has a copy it may run. Done first, so --prepare
+    uses this copy instead of downloading one into the profile. If it fails, --prepare falls
+    back to the profile and reports as usual. }
+  if IsAdminInstallMode then
+    Exec(ExpandConstant('{app}\{#AppExe}'), '--install-tool', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   { The app writes the settings, checks the driver and downloads the Lenovo tool, so the first
     key press works offline. It runs as the signed-in user: with an all-users install setup is

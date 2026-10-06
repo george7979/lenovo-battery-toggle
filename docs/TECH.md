@@ -45,14 +45,16 @@ where the Vantage switch reads it from.
 | *(none)* | user, F12 | Driver check → settings → tool → toggle → message from read-back state |
 | `--prepare [start stop]` | installer | Write the wizard values (or defaults; the notification time is kept), driver check, download + verify tool. No UI, no toggle. Exit `0` OK, `1` failed, `2` driver missing, `3` ChargeThreshold.exe not obtained (download failed or not signed by Lenovo) |
 | `--settings` | settings shortcut | Window for start/stop and notification time; current values from `config.json` (defaults if missing or invalid); Save writes the file and, when thresholds are on, runs `on <stop> <start>` |
-| `--off` | per-user uninstaller, setup's Uninstall action | Switch thresholds off if the cached tool and driver exist. Never downloads, always exits `0` |
+| `--install-tool` | all-users setup (elevated) | Download `ChargeThreshold.exe` next to the app (`{app}`), verify it there. Exit `0` OK (also when a valid copy is already there), `1` failed, `3` not obtained |
+| `--off` | uninstaller, setup's Uninstall action | Switch thresholds off if a tool copy and the driver exist. Never downloads, always exits `0` |
 
 ## Files on the user's machine
 
 | Location | Content | Removed by uninstaller |
 |---|---|---|
 | `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle\` (for me) or `C:\Program Files\Lenovo Battery Toggle\` (all users) | app, `.exe.config`, `settings.ico`, uninstaller | yes |
-| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` | yes, whole folder |
+| `%LOCALAPPDATA%\LenovoBatteryToggle\` | `config.json`, `ChargeThreshold.exe` (per-user install, or fallback) | yes, whole folder |
+| `C:\Program Files\Lenovo Battery Toggle\ChargeThreshold.exe` | protected copy (all-users install) | yes |
 | Start menu (user or all users) | app shortcut, settings shortcut (`--settings`, gear icon) | yes |
 | `HKCU` or `HKLM` `\...\Uninstall\{6C1E8F4A-...}` | Apps entry | yes |
 
@@ -86,17 +88,23 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
   `--prepare` through `ExecAsOriginalUser`, so an elevated setup still writes the settings
   into the signed-in user's profile. The uninstaller removes the data folder of the user
   who runs it.
-- **Never elevated with the user's files.** `ChargeThreshold.exe` lives in
-  `%LOCALAPPDATA%`, which the same user's unelevated processes can write, so starting it
-  (or loading a DLL planted beside it) from an elevated process would be a UAC bypass.
-  `ChargeThresholdTool.Ensure()` refuses and `Existing()` returns null when
-  `Elevation.IsElevated`; without UAC (`TokenElevationTypeDefault`) there is no boundary and
-  the app works. The `[UninstallRun]` `--off` entry has `Check: not IsAdminInstallMode`,
-  because an all-users uninstaller is elevated and Inno cannot run anything as the original
-  user at uninstall time. Setup's Uninstall action calls `--off` through
-  `ExecAsOriginalUser` before it starts an all-users uninstaller. An all-users install's
-  uninstall log from 0.1.0 still holds an `--off` entry (Repair appends to the log, and the
-  latest `RunOnceId` entry runs); the app's own check makes it a no-op.
+- **Never elevated with the user's files.** The user's copy of `ChargeThreshold.exe` lives
+  in `%LOCALAPPDATA%`, which the same user's unelevated processes can write, so starting it
+  from an elevated process would be a UAC bypass. An all-users uninstaller is elevated and
+  Inno cannot run anything as the original user at uninstall time, so an all-users setup
+  runs `--install-tool` (plain `Exec`, elevated) before `--prepare`: the app downloads the
+  tool into `{app}`, writable by administrators only, and checks the signature on the file
+  in that final place. Tool lookup (`ChargeThresholdTool`): the protected copy next to the
+  app if it is there and signed; otherwise, only when not `Elevation.IsElevated`, the user's
+  copy (downloaded if missing). Elevated with no protected copy, `Ensure()` refuses and
+  `Existing()` returns null, so `--off` does nothing. A protected copy that fails the check
+  is ignored, not deleted (an unelevated process may not delete it). The tool imports only
+  `KERNEL32` and `RPCRT4` (KnownDLLs). Without UAC (`TokenElevationTypeDefault`) there is no
+  boundary and the user's copy is used as before. Setup's Uninstall action also runs
+  `--off` through `ExecAsOriginalUser` before an all-users uninstaller, for an install whose
+  `--install-tool` failed. Repair of a 0.1.0 all-users install keeps its old `--off` entry in
+  the uninstall log (Repair appends, the latest `RunOnceId` entry runs); it now runs the new
+  app, which uses the protected copy.
 - **Maintenance page** (custom `[Code]`): not installed → the mode dialog and a normal
   install. Installed (Apps entry `...\Uninstall\{AppId}_is1` under HKCU and/or HKLM) →
   Inno reuses the previous mode (`UsePreviousPrivileges`, no mode dialog) and the page
@@ -156,8 +164,8 @@ download (silent mode suppresses them, and the test machine has the driver).
 
 ## Known issues
 
-- Uninstalling an all-users installation from Windows Settings leaves the thresholds as
-  they are (see *Never elevated with the user's files*); setup's Uninstall action switches
-  them off.
+- An all-users install whose `--install-tool` download failed has no protected copy: its
+  uninstaller from Windows Settings leaves the thresholds as they are (setup's Uninstall
+  action still switches them off); Repair with an internet connection fixes it.
 - Vantage shows the switch as "off" regardless of the state when the
   `PWRMGRV\ConfKeys` branch is missing; fix in README → Troubleshooting.
