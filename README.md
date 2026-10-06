@@ -116,8 +116,9 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
 
 1. Download `lenovo-battery-toggle-<version>-setup.exe` from the
    [latest release](https://github.com/george7979/lenovo-battery-toggle/releases/latest).
-2. Run it. The installer is not code-signed, so Windows SmartScreen may show
-   "Windows protected your PC": choose **More info → Run anyway**.
+2. Run it. The installer is not code-signed yet, so Windows SmartScreen may show
+   "Windows protected your PC": choose **More info → Run anyway** (see
+   [Code signing](#code-signing-planned)).
 3. Choose the install mode:
    - **Install for me only** — no administrator rights; installs to
      `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle`.
@@ -141,6 +142,17 @@ offers two choices:
   all users).
 
 To switch between "for me" and "for all users", uninstall and install again.
+
+### Code signing (planned)
+
+> **Note:** The installer and the app are not code-signed yet, so on the first run Windows
+> SmartScreen may warn that the publisher is unknown. This is expected for now; we plan to
+> sign them in a future release.
+
+Until then you can check what you run: the source code and the
+[build pipeline](.github/workflows/build.yml) that produces the installer are public, and
+each release lists the installer's SHA-256 checksum, which you can compare with
+`Get-FileHash lenovo-battery-toggle-<version>-setup.exe` in PowerShell.
 
 ## Usage
 
