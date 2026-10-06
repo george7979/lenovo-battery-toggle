@@ -118,6 +118,11 @@ The app writes nothing else: no registry values, no services, no scheduled tasks
 Deliberately: .NET Framework 4.8 instead of .NET 8 — a 45 kB executable (icons included)
 with no runtime to install outweighs the newer language and libraries for a tool this small.
 
+Deliberately: no tray icon showing the state — it would need a resident process with an
+autostart entry, polling the driver to notice changes made in Vantage, and closing before
+updates in both install modes, against an app that starts, switches and exits. The
+notification after every switch and the finish page already show the state.
+
 Deliberately: no automatic driver installation — it needs elevation and Lenovo's package
 URL changes with every version; Windows Update installs the driver reliably.
 
