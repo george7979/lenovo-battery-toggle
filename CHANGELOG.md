@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-10-06
+
+Reliable uninstall for all-users installations and the current state in the settings window.
+
+### Added
+
+- The settings window shows whether the charge thresholds are on or off right now.
+
+### Fixed
+
+- Uninstalling an all-users installation from Windows Settings now switches the thresholds
+  off even when the installer could not download `ChargeThreshold.exe`: the uninstaller
+  copies the user's copy into the program folder and uses it only after checking it there
+  (Lenovo signature and the exact file Lenovo publishes). No internet is needed.
+- The documentation gives the right folder for an all-users installation:
+  `C:\Program Files (x86)\Lenovo Battery Toggle`.
+
 ## [0.1.1] - 2026-10-06
 
 Security fixes and a clearer end of installation.

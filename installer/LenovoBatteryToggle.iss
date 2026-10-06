@@ -1,6 +1,7 @@
-﻿; Inno Setup 7 script. Build: ISCC.exe /DAppVersion=0.1.1 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
+﻿; Inno Setup 7 script. Build: ISCC.exe /DAppVersion=0.1.2 /DSourceDir=<folder with the built .exe> LenovoBatteryToggle.iss
 ; Setup asks: install for me (no administrator rights, %LOCALAPPDATA%\Programs) or for all
-; users (UAC, Program Files). Settings and the Lenovo tool always live in the user's profile.
+; users (UAC, Program Files (x86)). Settings always live in the user's profile; the Lenovo tool
+; too, except for the protected copy of an all-users install (see [UninstallRun]).
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -112,14 +113,16 @@ Filename: "{app}\{#AppExe}"; Parameters: "--on"; Description: "{code:SwitchOnDes
 [UninstallRun]
 ; Leave the battery at its factory behaviour before the files go away. A per-user uninstaller
 ; runs unelevated and uses the user's copy of the Lenovo tool; an all-users uninstaller is
-; elevated and the app then uses only the copy setup put in {app} (see --install-tool).
+; elevated and the app then uses only the copy in {app}: the one setup downloaded (see
+; --install-tool), or else the user's copy, copied there and checked in place.
 Filename: "{app}\{#AppExe}"; Parameters: "--off"; Flags: runhidden waituntilterminated; RunOnceId: "TurnOffThresholds"
 
 [UninstallDelete]
 ; Everything the app ever wrote: config.json, the downloaded ChargeThreshold.exe, any subfolder
 Type: filesandordirs; Name: "{#DataDir}"
-; Downloaded by --install-tool, so not removed with the [Files] entries
-Type: files; Name: "{app}\ChargeThreshold.exe"
+; The protected copy (downloaded or promoted by the app, so not removed with the [Files]
+; entries) and any temporary file left from making it
+Type: files; Name: "{app}\ChargeThreshold.exe*"
 ; {app} is not listed: Inno removes its own files and the empty folder, and a
 ; filesandordirs entry would wipe a pre-existing folder chosen as the install directory
 

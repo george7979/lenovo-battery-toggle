@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace LenovoBatteryToggle
@@ -19,11 +20,19 @@ namespace LenovoBatteryToggle
         public static readonly string ToolPath = Path.Combine(Settings.DataDirectory, "ChargeThreshold.exe");
 
         /// <summary>
-        /// The copy next to the app, made only by an all-users setup (--install-tool), so it sits
-        /// in Program Files where only administrators can write. It is the only copy an elevated
-        /// process may run: the user's copy can be changed by the user's unelevated processes.
+        /// The copy next to the app, made only by an elevated process (an all-users setup, or the
+        /// all-users uninstaller), so it sits in Program Files where only administrators can write.
+        /// It is the only copy an elevated process may run: the user's copy can be changed by the
+        /// user's unelevated processes.
         /// </summary>
         public static readonly string ProtectedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChargeThreshold.exe");
+
+        /// <summary>
+        /// SHA-256 of the one build a user's copy may be promoted from: ChargeThreshold.exe
+        /// v1.0.0.2 (OriginalFilename ChargeTh.exe), as served at <see cref="DownloadUrl"/>. The
+        /// signature alone would accept any Lenovo-signed program put in the profile under that name.
+        /// </summary>
+        private const string PromotableSha256 = "C919EE2FAEA907169FE0222BD8B1BD07E03E6A8E106DFEA7EE0A9A9CE5EE8380";
 
         private readonly string _path;
 
@@ -37,7 +46,7 @@ namespace LenovoBatteryToggle
         {
             var protectedCopy = Protected();
             if (protectedCopy != null) return protectedCopy;
-            if (Elevation.IsElevated) throw new InvalidOperationException(Text.Elevated);
+            if (Elevation.IsElevated) return Promote() ?? throw new InvalidOperationException(Text.Elevated);
 
             var path = ToolPath;
             if (!File.Exists(path))
@@ -55,23 +64,33 @@ namespace LenovoBatteryToggle
 
         /// <summary>
         /// A copy that is already there, never downloads; null when there is none. An elevated
-        /// process gets only the protected copy.
+        /// process gets only the protected copy, promoted from the user's copy if needed.
         /// </summary>
         public static ChargeThresholdTool Existing()
         {
             var protectedCopy = Protected();
-            if (protectedCopy != null || Elevation.IsElevated) return protectedCopy;
+            if (protectedCopy != null) return protectedCopy;
+            if (Elevation.IsElevated) return Promote();
             return File.Exists(ToolPath) && Signature.IsSignedByLenovo(ToolPath) ? new ChargeThresholdTool(ToolPath) : null;
         }
 
         /// <summary>
         /// Downloads the protected copy next to the app (--install-tool, run by an elevated
-        /// all-users setup). The signature is checked on the file in its final place.
+        /// all-users setup), or promotes the user's copy when the download fails. The signature
+        /// is checked on the file in its final place.
         /// </summary>
         public static void InstallProtected()
         {
             if (Protected() != null) return;
-            Download(ProtectedPath);
+            try
+            {
+                Download(ProtectedPath);
+            }
+            catch (ToolUnavailableException)
+            {
+                if (Promote() != null) return;
+                throw;
+            }
             if (!Signature.IsSignedByLenovo(ProtectedPath))
             {
                 File.Delete(ProtectedPath);
@@ -83,6 +102,42 @@ namespace LenovoBatteryToggle
         // is not allowed to delete it
         private static ChargeThresholdTool Protected() =>
             File.Exists(ProtectedPath) && Signature.IsSignedByLenovo(ProtectedPath) ? new ChargeThresholdTool(ProtectedPath) : null;
+
+        /// <summary>
+        /// Copies the user's copy next to the app and checks the copy there, where unelevated
+        /// processes cannot change it any more; the source is never checked or run. Lets an
+        /// all-users install whose download failed at setup still switch thresholds off on
+        /// uninstall, without network. Null when there is nothing valid to promote.
+        /// </summary>
+        private static ChargeThresholdTool Promote()
+        {
+            var temp = ProtectedPath + ".promote";
+            try
+            {
+                if (!File.Exists(ToolPath)) return null;
+                File.Copy(ToolPath, temp, true);
+                if (!Signature.IsSignedByLenovo(temp) || !HasSha256(temp, PromotableSha256))
+                {
+                    File.Delete(temp);
+                    return null;
+                }
+                if (File.Exists(ProtectedPath)) File.Delete(ProtectedPath);
+                File.Move(temp, ProtectedPath);
+                return new ChargeThresholdTool(ProtectedPath);
+            }
+            catch (Exception)
+            {
+                try { File.Delete(temp); } catch (Exception) { }
+                return null;
+            }
+        }
+
+        private static bool HasSha256(string path, string expected)
+        {
+            using (var sha = SHA256.Create())
+            using (var stream = File.OpenRead(path))
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "") == expected;
+        }
 
         private static void Download(string path)
         {

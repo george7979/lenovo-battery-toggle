@@ -123,7 +123,8 @@ Nothing else: the app runs on .NET Framework 4.8, which is part of Windows 10 an
    - **Install for me only** — no administrator rights; installs to
      `%LOCALAPPDATA%\Programs\Lenovo Battery Toggle`.
    - **Install for all users** — asks for administrator rights; installs to
-     `C:\Program Files\Lenovo Battery Toggle`.
+     `C:\Program Files (x86)\Lenovo Battery Toggle` (the installer is 32-bit; the app
+     itself runs as a 64-bit process).
 4. On the **Charge thresholds** page choose the values used when the thresholds are on.
 5. At the end the installer downloads and verifies `ChargeThreshold.exe`, so the first
    key press works even offline.
@@ -171,7 +172,9 @@ Starting the app is the whole interface: every start toggles the thresholds. (Th
 
 ## Configuration
 
-Start menu → **Lenovo Battery Toggle Settings** opens a small window:
+Start menu → **Lenovo Battery Toggle Settings** opens a small window. Its first line shows
+whether the thresholds are on or off right now, read from the system when the window opens.
+Below it:
 
 - **Start charging below** — charging starts when the battery drops below this level,
 - **Stop charging at** — charging stops at this level,
@@ -231,9 +234,7 @@ https://download.lenovo.com/pccbbs//thinkvantage_en/metroapps/Vantage/ChargeThre
 
 and save it as `%LOCALAPPDATA%\LenovoBatteryToggle\ChargeThreshold.exe`. The app accepts
 it only with a valid Lenovo signature, and the uninstaller removes it like any other file
-of the app. The message window can be copied with Ctrl+C. With an all-users installation,
-also run the installer's **Repair** once the download works again: it puts a copy in the
-program folder, which the uninstaller needs to switch the thresholds off.
+of the app. The message window can be copied with Ctrl+C.
 
 **The switch in Lenovo Vantage always shows "off", although the thresholds work.** Vantage
 reads the state from a registry branch that the driver creates only when it is installed
@@ -249,7 +250,7 @@ installs the driver again and creates the branch.
 Requires the .NET SDK (8 or newer) and Inno Setup 7 on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.1.1 -Iscc "C:\path\to\ISCC.exe"
+.\build.ps1 -Version 0.1.2 -Iscc "C:\path\to\ISCC.exe"
 ```
 
 The installer is written to `artifacts\`. Architecture and test procedure:

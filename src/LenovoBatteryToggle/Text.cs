@@ -39,6 +39,18 @@ namespace LenovoBatteryToggle
             "Jeśli progi są włączone, nowe wartości zadziałają od razu.",
             "If thresholds are on, the new values apply right away.");
 
+        public static string StateNow => Pick("Teraz: ", "Now: ");
+
+        public static string StateReading => Pick("odczytuję stan progów…", "reading the threshold state…");
+
+        public static string StateUnknown(string reason) => Pick(
+            $"nie udało się odczytać stanu progów. {reason}",
+            $"the threshold state could not be read. {reason}");
+
+        public static string ToolNotYetDownloaded => Pick(
+            "ChargeThreshold.exe nie jest jeszcze pobrany; aplikacja pobierze go przy pierwszym przełączeniu.",
+            "ChargeThreshold.exe is not downloaded yet; the app downloads it on the first toggle.");
+
         public static string StartBelowStop => Pick(
             "Wartość start musi być mniejsza niż stop.",
             "The start value must be lower than the stop value.");

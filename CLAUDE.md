@@ -14,7 +14,7 @@ temp folder and build there:
 WIN_TEMP=$(wslpath "$(cmd.exe /c 'echo %TEMP%' 2>/dev/null | tr -d '\r')")
 W="$WIN_TEMP/lbt-build"
 rm -rf "$W" && mkdir -p "$W" && git ls-files -co --exclude-standard | tar -cf - -T - | tar -xf - -C "$W"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-build\build.ps1" -Version 0.1.1 -Iscc "$env:TEMP\lbt-tools\inno\ISCC.exe" -Dotnet "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-build\build.ps1" -Version 0.1.2 -Iscc "$env:TEMP\lbt-tools\inno\ISCC.exe" -Dotnet "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"'
 ```
 
 - `-Dotnet` points at a per-user .NET SDK (`%LOCALAPPDATA%\Microsoft\dotnet`); with a

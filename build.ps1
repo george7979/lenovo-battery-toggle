@@ -1,5 +1,5 @@
 ﻿# Builds the app and the installer. Used locally and by GitHub Actions.
-#   .\build.ps1 -Version 0.1.1 -Iscc "C:\path\to\ISCC.exe"
+#   .\build.ps1 -Version 0.1.2 -Iscc "C:\path\to\ISCC.exe"
 # Output: artifacts\lenovo-battery-toggle-<version>-setup.exe
 
 param(
