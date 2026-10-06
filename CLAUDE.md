@@ -7,19 +7,23 @@ All documentation, code comments and commit messages are in English.
 
 ## Building from WSL
 
-MSBuild is unreliable on `\\wsl.localhost` paths, so copy the tracked files to a Windows
-folder and build there:
+MSBuild is unreliable on `\\wsl.localhost` paths, so copy the tracked files to the Windows
+temp folder and build there:
 
 ```bash
-W=/mnt/c/Users/LENOVO/AppData/Local/Temp/lbt-build
-rm -rf $W && mkdir -p $W && git ls-files -co --exclude-standard | tar -cf - -T - | tar -xf - -C $W
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& 'C:\Users\LENOVO\AppData\Local\Temp\lbt-build\build.ps1' -Version 0.1.0 -Iscc \"\$env:TEMP\lbt-tools\inno\ISCC.exe\" -Dotnet \"\$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe\""
+WIN_TEMP=$(wslpath "$(cmd.exe /c 'echo %TEMP%' 2>/dev/null | tr -d '\r')")
+W="$WIN_TEMP/lbt-build"
+rm -rf "$W" && mkdir -p "$W" && git ls-files -co --exclude-standard | tar -cf - -T - | tar -xf - -C "$W"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:TEMP\lbt-build\build.ps1" -Version 0.1.0 -Iscc "$env:TEMP\lbt-tools\inno\ISCC.exe" -Dotnet "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"'
 ```
 
-- .NET SDK is per-user: `%LOCALAPPDATA%\Microsoft\dotnet\dotnet.exe`.
+- `-Dotnet` points at a per-user .NET SDK (`%LOCALAPPDATA%\Microsoft\dotnet`); with a
+  machine-wide SDK on `PATH` leave it out.
 - Inno Setup 7.1.0 is unpacked portable in `%TEMP%\lbt-tools\inno` (installer with
   `/PORTABLE=1 /CURRENTUSER /DIR=...`). If missing, repeat what the CI step
   *Install Inno Setup* does.
+- `rm -rf` fails with *Input/output error* while the previously built installer is still
+  running; close it or build into another folder.
 - Icons: `uv run --with pillow python assets/make_icon.py` (both `.ico` files and the README
   image come from this one script; never edit the `.ico` files by hand).
 
